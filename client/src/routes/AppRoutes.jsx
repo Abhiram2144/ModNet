@@ -8,6 +8,9 @@ const ModuleSelect = lazy(() => import("../pages/ModuleSelect"));
 const Home = lazy(() => import("../pages/Home"));
 const Chat = lazy(() => import("../pages/ModuleChat"));
 const NotFound = lazy(() => import("../pages/NotFound"));
+const LandingPage = lazy(()=> import("../pages/LandingPage"))
+const Account = lazy(()=> import("../pages/Account"))
+const Review = lazy(()=> import("../pages/Review"))
 // const SignUp = lazy(()=> import("../pages/SignUp"))
 
 // 🔐 Protected route wrapper
@@ -37,12 +40,35 @@ export default function AppRoutes() {
           />
 
           <Route
-            path="/"
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/review"
+            element={
+              <ProtectedRoute>
+                <Review />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/home"
             element={
               <ProtectedRoute>
                 <Home />
               </ProtectedRoute>
             }
+          />
+
+          <Route 
+          path = "/"
+          element= {<LandingPage/>}
           />
 
           <Route
