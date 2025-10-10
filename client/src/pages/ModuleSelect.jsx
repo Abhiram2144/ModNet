@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 
 const ModulesSelect = () => {
   const [courses, setCourses] = useState([]);
@@ -10,7 +11,6 @@ const ModulesSelect = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch available courses on mount
   useEffect(() => {
     const fetchCourses = async () => {
       const { data, error } = await supabase.from("courses").select("*");
@@ -20,136 +20,190 @@ const ModulesSelect = () => {
     fetchCourses();
   }, []);
 
-  // Fetch modules when a course is selected
   useEffect(() => {
     const fetchModules = async () => {
-      if (!selectedCourse) return;
+      if (!selectedCourse) {
+        setModules([]);
+        setSelectedModules([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("modules")
         .select("*")
-        .eq("courseId", selectedCourse); // ✅ matches schema
+        .eq("course_id", selectedCourse);
+
       if (error) console.error("Error fetching modules:", error);
       else setModules(data);
     };
     fetchModules();
   }, [selectedCourse]);
 
-  const handleSubmit = async () => {
-    if (!selectedCourse || selectedModules.length === 0) {
-      alert("Please select your course and modules.");
+  const handleModuleSelect = (event) => {
+    const moduleId = event.target.value;
+    if (!moduleId) return;
+
+    // convert to number for type consistency
+    const modIdNum = Number(moduleId);
+
+    if (selectedModules.includes(modIdNum)) return;
+    if (selectedModules.length >= 4) {
+      alert("You can select up to 4 modules only.");
       return;
     }
 
-    setLoading(true);
+    setSelectedModules([...selectedModules, modIdNum]);
+  };
 
+  const handleRemoveModule = (moduleId) => {
+    setSelectedModules(selectedModules.filter((id) => id !== moduleId));
+  };
+
+  const handleSubmit = async () => {
+  if (!selectedCourse || selectedModules.length === 0) {
+    alert("Please select a course and at least one module.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // Step 1: Get logged-in Supabase Auth user
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      alert("Authentication error. Please log in again.");
-      setLoading(false);
-      return;
+      throw new Error("Authentication error. Please log in again.");
     }
 
-    try {
-      // 1️⃣ Update the user's selected course
-      const { error: userUpdateError } = await supabase
-        .from("users")
-        .update({ courseId: selectedCourse })
-        .eq("email", user.email); // safer than eq("id") since we control emails
+    // Step 2: Find user in your public.user table via email
+    const { data: userRecord, error: userFetchError } = await supabase
+      .from("user")
+      .select("id")
+      .eq("email", user.email)
+      .single();
 
-      if (userUpdateError) throw userUpdateError;
-
-      // 2️⃣ Insert each selected module into user_modules table
-      const userModulesToInsert = selectedModules.map((modId) => ({
-        userId: user.id,
-        moduleId: modId,
-      }));
-
-      const { error: moduleInsertError } = await supabase
-        .from("user_modules")
-        .insert(userModulesToInsert);
-
-      if (moduleInsertError) throw moduleInsertError;
-
-      // 3️⃣ Redirect to home
-      navigate("/home");
-    } catch (err) {
-      console.error("Error saving module selections:", err);
-      alert("Something went wrong while saving your preferences.");
+    if (userFetchError || !userRecord) {
+      throw new Error("User record not found in public.user table.");
     }
 
+    // Step 3: Update selected course
+    const { error: updateError } = await supabase
+      .from("user")
+      .update({
+        courseId: selectedCourse,
+      })
+      .eq("id", userRecord.id);
+
+    if (updateError) throw updateError;
+
+    // Step 4: Insert user_modules entries
+    const userModules = selectedModules.map((modId) => ({
+      userId: userRecord.id, // int8 id from your user table
+      moduleId: modId,
+    }));
+
+    const { error: insertError } = await supabase
+      .from("user_modules")
+      .insert(userModules);
+
+    if (insertError) throw insertError;
+
+    alert("✅ Modules saved successfully!");
+    navigate("/home");
+  } catch (err) {
+    console.error("❌ Error saving module selections:", err);
+    alert(`Something went wrong while saving your preferences: ${err.message}`);
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
-  const toggleModuleSelection = (modId) => {
-    if (selectedModules.includes(modId)) {
-      setSelectedModules(selectedModules.filter((id) => id !== modId));
-    } else if (selectedModules.length < 4) {
-      setSelectedModules([...selectedModules, modId]);
-    } else {
-      alert("You can select up to 4 modules.");
-    }
-  };
+
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl">
-        <h1 className="text-2xl font-semibold text-center mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-black text-white px-4">
+      <div className="bg-neutral-900 w-full max-w-sm p-8 rounded-2xl shadow-md border border-gray-700">
+        <h1 className="text-2xl font-serif font-semibold text-center mb-6">
           Select Your Course & Modules
         </h1>
 
         {/* Course Dropdown */}
-        <label className="block mb-2 font-medium text-gray-600">Course</label>
-        <select
-          className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500"
-          value={selectedCourse}
-          onChange={(e) => setSelectedCourse(e.target.value)}
-        >
-          <option value="">Select a course</option>
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        <div className="mb-5">
+          <label className="block text-sm font-medium mb-1">Course</label>
+          <select
+            className="w-full bg-neutral-800 border border-gray-600 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+            value={selectedCourse}
+            onChange={(e) => setSelectedCourse(e.target.value)}
+          >
+            <option value="">Select a course</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {/* Modules Selection */}
+        {/* Modules Dropdown */}
         {modules.length > 0 && (
-          <>
-            <label className="block mb-2 font-medium text-gray-600">
+          <div className="mb-5">
+            <label className="block text-sm font-medium mb-1">
               Modules (Select up to 4)
             </label>
-            <div className="grid grid-cols-2 gap-2 mb-4">
+            <select
+              className="w-full bg-neutral-800 border border-gray-600 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+              onChange={handleModuleSelect}
+              value=""
+            >
+              <option value="">Select a module</option>
               {modules.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => toggleModuleSelection(m.id)}
-                  className={`border rounded-lg py-2 text-sm transition-all ${
-                    selectedModules.includes(m.id)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-gray-100 hover:bg-gray-200"
-                  }`}
-                >
+                <option key={m.id} value={m.id}>
                   {m.name}
-                </button>
+                </option>
               ))}
+            </select>
+
+            {/* Selected Modules */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              {selectedModules.map((modId) => {
+                const mod = modules.find((m) => m.id === modId);
+                return (
+                  <div
+                    key={modId}
+                    className="flex items-center bg-gray-700 text-white px-3 py-1 rounded-full text-xs"
+                  >
+                    <span>{mod?.name || "Unknown module"}</span>
+                    <button
+                      type="button"
+                      className="ml-2 hover:text-red-400"
+                      onClick={() => handleRemoveModule(modId)}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-          </>
+          </div>
         )}
+
+        <p className="text-xs text-center text-red-400 mb-4">
+          You can’t change these later *
+        </p>
 
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className={`w-full py-3 rounded-lg text-white font-medium ${
+          className={`w-full py-2 rounded-md text-white text-sm font-medium transition-all ${
             loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          } transition`}
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-gray-200 text-black hover:bg-white"
+          }`}
         >
-          {loading ? "Saving..." : "Continue to App"}
+          {loading ? "Saving..." : "Submit"}
         </button>
       </div>
     </div>
