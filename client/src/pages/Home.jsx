@@ -19,17 +19,17 @@ export default function Home() {
 
     const fetchModules = async () => {
       try {
-        // 1️⃣ Get student record linked to auth user
-        const { data: dbStudent, error: studentError } = await supabase
+        // 1️⃣ Get the student's internal record (linked by auth user id)
+        const { data: studentData, error: studentError } = await supabase
           .from("students")
           .select("id")
           .eq("userid", user.id)
-          .single();
-
+          .maybeSingle();
+        console.log(user.id);
         if (studentError) throw studentError;
-        if (!dbStudent) throw new Error("Student record not found.");
+        if (!studentData) throw new Error("Student record not found.");
 
-        // 2️⃣ Fetch user's modules
+        // 2️⃣ Fetch modules joined via user_modules (linked to students.id)
         const { data: userModules, error: modError } = await supabase
           .from("user_modules")
           .select(`
@@ -41,12 +41,12 @@ export default function Home() {
               description
             )
           `)
-          .eq("userid", dbStudent.id);
+          .eq("userid", studentData.id);
 
         if (modError) throw modError;
 
         const formattedModules =
-          userModules?.map((um) => um.modules).filter(Boolean) || [];
+          userModules?.map((u) => u.modules).filter(Boolean) || [];
 
         setModules(formattedModules);
       } catch (err) {
@@ -60,8 +60,8 @@ export default function Home() {
     fetchModules();
   }, [user, navigate]);
 
-  const handleModuleClick = (id) => {
-    navigate(`/chat/${id}`);
+  const handleModuleClick = (moduleId) => {
+    navigate(`/chat/${moduleId}`);
   };
 
   const handleLogout = async () => {

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 import { AuthProvider } from "./contexts/AuthContext";
 import SplashScreen from "./pages/SplashScreen";
+// import {MobileNavbar} from "../src/components/MobileNavbar"
 
 function App() {
   const [splashDone, setSplashDone] = useState(false);
@@ -22,8 +23,9 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50 text-gray-900">
+        <div className="min-h-screen bg-gray-50 text-gray-900 relative">
           <AppRoutes />
+          {/* <MobileNavbar /> */}
         </div>
       </Router>
     </AuthProvider>
