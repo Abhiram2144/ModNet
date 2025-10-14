@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
 const Login = () => {
-  const [step, setStep] = useState("email"); // email → verify
+  const [step, setStep] = useState("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -71,41 +71,55 @@ const Login = () => {
       return;
     }
 
-    // Check if user exists in the "user" table
-    const { data: existingUser, error: userError } = await supabase
-      .from("user")
-      .select("*")
-      .eq("email", email)
-      .single();
+    // Get session and user from auth.users
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authUser = sessionData?.session?.user;
+    setUser(authUser);
 
-    if (userError && userError.code !== "PGRST116") {
-      setMessage(`⚠️ Error checking user: ${userError.message}`);
+    if (!authUser) {
+      setMessage("⚠️ No authenticated user found.");
       setLoading(false);
       return;
     }
 
-    if (!existingUser) {
-      const displayName = email.split("@")[0];
-      const { error: insertError } = await supabase.from("user").insert([
-        {
-          email,
-          displayName,
-          created_at: new Date(),
-        },
-      ]);
+    // inside handleVerifyOtp
+    const { data: existingStudent, error: studentError } = await supabase
+      .from("students")
+      .select("*")
+      .eq("email", email)
+      .single();
 
-      if (insertError) {
-        setMessage(`⚠️ Error creating user: ${insertError.message}`);
-        setLoading(false);
-        return;
-      }
+    let studentId = existingStudent?.id;
+
+    if (!existingStudent) {
+      const displayName = email.split("@")[0];
+      const { data: insertedStudent, error: insertError } = await supabase
+        .from("students")
+        .insert([
+          {
+            email,
+            displayname: displayName,
+            userid: authUser.id,
+            created_at: new Date(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      studentId = insertedStudent.id;
     }
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    setUser(sessionData?.session?.user || null);
+    // ✅ Check if student has selected modules
+    const { data: studentModules } = await supabase
+      .from("user_modules")
+      .select("id")
+      .eq("userid", studentId);
 
-    setMessage("✅ OTP verified! Redirecting...");
-    navigate("/modules");
+    if (!studentModules || studentModules.length === 0) navigate("/modules");
+    else navigate("/home");
+
+
     setLoading(false);
   };
 

@@ -23,7 +23,7 @@ const ReviewPage = () => {
 
         // Fetch user record from your `user` table
         const { data: dbUser, error } = await supabase
-          .from("user")
+          .from("students")
           .select("id, displayname, email, canreview, review, suggestion")
           .eq("email", user.email)
           .single();
@@ -48,7 +48,7 @@ const ReviewPage = () => {
       setSubmitting(true);
 
       const { error } = await supabase
-        .from("user")
+        .from("students")
         .update({
           review: review,
           suggestion: suggestion,

@@ -25,7 +25,7 @@ const AccountPage = () => {
 
       // Fetch corresponding user record
       const { data: dbUser, error: userErr } = await supabase
-        .from("user")
+        .from("students")
         .select("id, displayname, email, profileimage, courseid")
         .eq("email", user.email)
         .single();
@@ -68,7 +68,7 @@ const AccountPage = () => {
       const { data: { user } } = await supabase.auth.getUser();
 
       const { error } = await supabase
-        .from("user")
+        .from("students")
         .update({ profileImage: selectedPfp })
         .eq("email", user.email);
 

@@ -80,7 +80,7 @@ const ModulesSelect = () => {
 
     // Step 2: Find user in your public.user table via email
     const { data: userRecord, error: userFetchError } = await supabase
-      .from("user")
+      .from("students")
       .select("id")
       .eq("email", user.email)
       .single();
@@ -91,7 +91,7 @@ const ModulesSelect = () => {
 
     // Step 3: Update selected course
     const { error: updateError } = await supabase
-      .from("user")
+      .from("students")
       .update({
         courseid: selectedCourse,
       })
