@@ -4,35 +4,28 @@ import "../src/styles/App.css";
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 import { AuthProvider } from "./contexts/AuthContext";
+import SplashScreen from "./pages/SplashScreen";
 
 function App() {
-  const [loading, setLoading] = useState(true);
+  const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
-    const initSession = async () => {
-      // check if there's an active session when app loads
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) console.log("No active session");
-      setLoading(false);
-    };
-    initSession();
+    // Keep splash visible for a minimum of ~3.5 seconds
+    const timer = setTimeout(() => setSplashDone(true), 3500);
+    return () => clearTimeout(timer);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-lg font-semibold">
-        Loading ModNet...
-      </div>
-    );
+  if (!splashDone) {
+    return <SplashScreen onFinish={() => setSplashDone(true)} />;
   }
 
   return (
     <AuthProvider>
-    <Router>
-      <div className="min-h-screen bg-gray-50 text-gray-900">
-        <AppRoutes />
-      </div>
-    </Router>
+      <Router>
+        <div className="min-h-screen bg-gray-50 text-gray-900">
+          <AppRoutes />
+        </div>
+      </Router>
     </AuthProvider>
   );
 }
