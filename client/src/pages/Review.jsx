@@ -9,27 +9,29 @@ const ReviewPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [hover, setHover] = useState(0); // For hover animation
+  const [hover, setHover] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const {
           data: { user },
+          error: authError,
         } = await supabase.auth.getUser();
 
-        if (!user) throw new Error("User not found");
+        if (authError || !user) throw new Error("User not authenticated");
 
+        // Fetch user record from your `user` table
         const { data: dbUser, error } = await supabase
           .from("user")
-          .select("id, displayName, email, canReview, review, suggestion")
+          .select("id, displayname, email, canreview, review, suggestion")
           .eq("email", user.email)
           .single();
 
         if (error) throw error;
         setUserData(dbUser);
       } catch (err) {
-        console.error("❌ Error fetching user:", err);
+        console.error("❌ Error fetching user data:", err.message);
       } finally {
         setLoading(false);
       }
@@ -44,12 +46,13 @@ const ReviewPage = () => {
 
     try {
       setSubmitting(true);
+
       const { error } = await supabase
         .from("user")
         .update({
-          review,
-          suggestion,
-          canReview: false,
+          review: review,
+          suggestion: suggestion,
+          canreview: false, // ✅ correct column name
         })
         .eq("email", userData.email);
 
@@ -57,7 +60,7 @@ const ReviewPage = () => {
 
       setSubmitted(true);
     } catch (err) {
-      console.error("❌ Error submitting review:", err);
+      console.error("❌ Error submitting review:", err.message);
       alert("Failed to submit review.");
     } finally {
       setSubmitting(false);
@@ -79,7 +82,7 @@ const ReviewPage = () => {
       </div>
     );
 
-  if (!userData.canReview || submitted)
+  if (!userData.canreview || submitted)
     return (
       <div className="flex flex-col items-center justify-center h-screen text-center px-6 bg-black text-white">
         <h2 className="text-2xl font-semibold mb-3">Thank You!</h2>

@@ -40,11 +40,11 @@ const ModulesSelect = () => {
   }, [selectedCourse]);
 
   const handleModuleSelect = (event) => {
-    const moduleId = event.target.value;
-    if (!moduleId) return;
+    const moduleid = event.target.value;
+    if (!moduleid) return;
 
     // convert to number for type consistency
-    const modIdNum = Number(moduleId);
+    const modIdNum = Number(moduleid);
 
     if (selectedModules.includes(modIdNum)) return;
     if (selectedModules.length >= 4) {
@@ -55,8 +55,8 @@ const ModulesSelect = () => {
     setSelectedModules([...selectedModules, modIdNum]);
   };
 
-  const handleRemoveModule = (moduleId) => {
-    setSelectedModules(selectedModules.filter((id) => id !== moduleId));
+  const handleRemoveModule = (moduleid) => {
+    setSelectedModules(selectedModules.filter((id) => id !== moduleid));
   };
 
   const handleSubmit = async () => {
@@ -93,7 +93,7 @@ const ModulesSelect = () => {
     const { error: updateError } = await supabase
       .from("user")
       .update({
-        courseId: selectedCourse,
+        courseid: selectedCourse,
       })
       .eq("id", userRecord.id);
 
@@ -101,8 +101,8 @@ const ModulesSelect = () => {
 
     // Step 4: Insert user_modules entries
     const userModules = selectedModules.map((modId) => ({
-      userId: userRecord.id, // int8 id from your user table
-      moduleId: modId,
+      userid: userRecord.id, // int8 id from your user table
+      moduleid: modId,
     }));
 
     const { error: insertError } = await supabase

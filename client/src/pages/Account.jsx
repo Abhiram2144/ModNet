@@ -26,7 +26,7 @@ const AccountPage = () => {
       // Fetch corresponding user record
       const { data: dbUser, error: userErr } = await supabase
         .from("user")
-        .select("id, displayName, email, profileImage, courseId")
+        .select("id, displayname, email, profileimage, courseid")
         .eq("email", user.email)
         .single();
       if (userErr) throw userErr;
@@ -35,14 +35,14 @@ const AccountPage = () => {
       const { data: courseData } = await supabase
         .from("courses")
         .select("name")
-        .eq("id", dbUser.courseId)
+        .eq("id", dbUser.courseid)
         .single();
 
       // Fetch user modules
       const { data: moduleData } = await supabase
         .from("user_modules")
-        .select("moduleId, modules(name)")
-        .eq("userId", dbUser.id);
+        .select("moduleid, modules(name)")
+        .eq("userid", dbUser.id);
 
       setUserData({
         ...dbUser,
@@ -113,7 +113,7 @@ const AccountPage = () => {
           </button>
         </div>
 
-        <h2 className="mt-4 text-lg font-semibold">{userData?.displayName}</h2>
+        <h2 className="mt-4 text-lg font-semibold">{userData?.displayname}</h2>
         <p className="text-gray-400 text-sm">{userData?.email}</p>
       </div>
 
