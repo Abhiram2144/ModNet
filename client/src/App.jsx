@@ -1,25 +1,14 @@
 import { BrowserRouter as Router, useLocation } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
-import "../src/styles/App.css";
+import "../src/styles/index.css";
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
-import { AuthProvider } from "./contexts/AuthContext";
-import SplashScreen from "./pages/SplashScreen";
-import Navbar from "./components/Navbar";  // ✅ Add this import
-import Footer from "./components/Footer";  // ✅ Add this import
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Loader from "./components/Loader"; // ✅ replacing SplashScreen
 
 function App() {
-  const [splashDone, setSplashDone] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSplashDone(true), 3500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!splashDone) {
-    return <SplashScreen onFinish={() => setSplashDone(true)} />;
-  }
-
   return (
     <AuthProvider>
       <Router>
@@ -31,17 +20,36 @@ function App() {
 
 function MainLayout() {
   const location = useLocation();
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
-  // ✅ Only show Footer on /home
+  const isLoginPage = location.pathname === "/login";
+
+useEffect(() => {
+  if (!isLoginPage) { // ✅ Skip loader on login
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 1200);
+    return () => clearTimeout(timer);
+  } else {
+    setIsLoading(false);
+  }
+}, [location.pathname]);
+
+  // ✅ Control Navbar & Footer visibility
+  const showNavbar = location.pathname !== "/login";
   const showFooter = location.pathname === "/home";
-  const showLogin = location.pathname !== "/login";
+
+  if (isLoading) {
+    return <Loader />;
+  }
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-gray-900 relative">
-      {showLogin && <Navbar /> }
-      <div className="pb-16"> {/* Padding so footer doesn't overlap content */}
+    <div className="min-h-screen bg-[#FAFAFA] text-gray-900 relative flex flex-col">
+      {showNavbar && <Navbar />}
+      <main className="flex-grow pb-16">
         <AppRoutes />
-      </div>
-      {showFooter && <Footer />} {/* Only show on Home */}
+      </main>
+      {showFooter && <Footer />}
     </div>
   );
 }

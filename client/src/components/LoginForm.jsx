@@ -68,7 +68,7 @@ const LoginForm = ({
               <button
                 type="button"
                 onClick={onSwitch}
-                className="link resend-btn"
+                className="link resend-btn hover:cursor-pointer"
               >
                 🔁 Resend OTP
               </button>

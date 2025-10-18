@@ -3,12 +3,14 @@ import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import LoginForm from "../components/LoginForm";
+import Loader from "../components/Loader";
 
 const Login = () => {
   const [step, setStep] = useState("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showLoader, setShowLoader] = useState(false);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const { setUser } = useAuth();
@@ -60,7 +62,7 @@ const Login = () => {
     setLoading(true);
     setMessage("");
 
-    const { data, error } = await supabase.auth.verifyOtp({
+    const { error } = await supabase.auth.verifyOtp({
       email,
       token: otp,
       type: "email",
@@ -82,37 +84,66 @@ const Login = () => {
       return;
     }
 
-    const { data: existingStudent } = await supabase
-      .from("students")
-      .select("*")
-      .eq("email", email)
-      .single();
+    // ✅ Start Loader before data fetch and preloading
+    setShowLoader(true);
 
-    let studentId = existingStudent?.id;
+    // Preload heavy routes while loader is active
+    const preloadPages = async () => {
+      try {
+        const home = import("../pages/Home");
+        const account = import("../pages/Account");
+        const review = import("../pages/Review");
+        await Promise.all([home, account, review]);
+      } catch (err) {
+        console.warn("⚠️ Page preloading failed:", err);
+      }
+    };
 
-    if (!existingStudent) {
-      const displayName = email.split("@")[0];
-      const { data: insertedStudent } = await supabase
+    await preloadPages();
+
+    // Simulate 2-second loading animation
+    setTimeout(async () => {
+      const { data: existingStudent } = await supabase
         .from("students")
-        .insert([
-          { email, displayname: displayName, userid: authUser.id, created_at: new Date() },
-        ])
-        .select()
+        .select("*")
+        .eq("email", email)
         .single();
 
-      studentId = insertedStudent.id;
-    }
+      let studentId = existingStudent?.id;
 
-    const { data: studentModules } = await supabase
-      .from("user_modules")
-      .select("id")
-      .eq("userid", studentId);
+      if (!existingStudent) {
+        const displayName = email.split("@")[0];
+        const { data: insertedStudent } = await supabase
+          .from("students")
+          .insert([
+            { email, displayname: displayName, userid: authUser.id, created_at: new Date() },
+          ])
+          .select()
+          .single();
 
-    if (!studentModules || studentModules.length === 0) navigate("/modules");
-    else navigate("/home");
+        studentId = insertedStudent.id;
+      }
 
-    setLoading(false);
+      const { data: studentModules } = await supabase
+        .from("user_modules")
+        .select("id")
+        .eq("userid", studentId);
+
+      if (!studentModules || studentModules.length === 0) navigate("/modules");
+      else navigate("/home");
+
+      setShowLoader(false);
+      setLoading(false);
+    }, 2000);
   };
+
+  if (showLoader) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#FAFAFA]">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <LoginForm

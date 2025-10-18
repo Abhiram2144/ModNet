@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import { LogIn, LogOut } from "lucide-react";
 import logo from "../assets/logo80.png";
+import StyleButton from "./StyleButton"; 
+import LoginButton from "../components/LoginButton"
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -15,23 +17,27 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-[#FAFAFA] border-b border-gray-200">
-      <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate("/")}>
-        <img src={logo} alt="ModNet Logo" className="w-10 h-auto" />
-        {/* <h1 className="text-xl font-semibold text-black font-[Kaisei_Decol]">ModNet</h1> */}
-      </div>
+    <nav className="w-full bg-[#FAFAFA] fixed top-0 left-0 z-50 shadow-sm">
+  <div className="max-w-7xl mx-auto flex items-center justify-between px-6 h-14">
+    {/* Logo */}
+    <div
+      className="flex items-center gap-2 cursor-pointer"
+      onClick={() => navigate("/")}
+    >
+      <img src={logo} alt="ModNet Logo" className="w-8 h-auto" />
+    </div>
 
-      <button
+    {/* Auth Button */}
+    <div className="flex items-center gap-3 pr-4"> {/* Added pr-4 */}
+      <div
         onClick={user ? handleLogout : handleLogin}
-        className="p-2 rounded-full hover:bg-[#7D3C3C]/10 transition"
         title={user ? "Log out" : "Log in"}
       >
-        {user ? (
-          <LogOut size={22} className="text-[#7D3C3C]" />
-        ) : (
-          <LogIn size={22} className="text-[#7D3C3C]" />
-        )}
-      </button>
-    </nav>
+        <LoginButton text1="Login" text2="Now" />
+      </div>
+    </div>
+  </div>
+</nav>
+
   );
 }
