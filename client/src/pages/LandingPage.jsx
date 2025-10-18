@@ -8,37 +8,37 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const handleLogin = () => {
-    navigate("/login");
-  };
+  const handleLogin = () => navigate("/login");
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.reload(); // simple reset of context/UI after logout
+    window.location.reload();
   };
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-white text-black relative px-6">
-      {/* Header */}
-      <div className="absolute top-6 left-6 flex items-center space-x-2">
-        <img src={logo} alt="ModNet Logo" className="w-10" />
-      </div>
+    <div
+      className="flex flex-col justify-between min-h-screen bg-[#FAFAFA] text-black font-[Kaisei_Decol] px-6"
+      style={{ fontFamily: "'Kaisei Decol', serif" }}
+    >
+      
 
-      <button
-        onClick={user ? handleLogout : handleLogin}
-        className="absolute top-6 right-6 p-2 text-gray-800 hover:text-black transition"
-        title={user ? "Log out" : "Log in"}
-      >
-        {user ? <LogOut size={22} /> : <LogIn size={22} />}
-      </button>
-
-      {/* Content */}
-      <div className="text-center mt-16">
-        <h1 className="text-4xl font-serif font-bold mb-4">ModNet</h1>
-        <p className="text-gray-600 text-base max-w-sm mx-auto">
+      {/* Main Content */}
+      <main className="flex flex-col justify-center items-center text-center flex-grow">
+        <h1 className="text-5xl font-semibold mb-4 tracking-tight">ModNet</h1>
+        <p className="text-lg text-gray-700 max-w-xs leading-relaxed">
           Join real-time discussion channels with classmates studying the same
           modules — exchange ideas, notes, and motivation.
         </p>
+      </main>
+
+      {/* Optional CTA */}
+      <div className="flex justify-center mb-10">
+        <button
+          onClick={() => (user ? navigate("/home") : navigate("/login"))}
+          className="px-6 py-3 rounded-xl bg-[#6B4F4F] text-white font-medium hover:bg-[#553b3b] transition-all"
+        >
+          {user ? "Go to Dashboard" : "Get Started"}
+        </button>
       </div>
     </div>
   );
