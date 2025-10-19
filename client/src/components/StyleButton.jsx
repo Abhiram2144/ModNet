@@ -1,16 +1,23 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useAuth } from '../contexts/AuthContext';
 
 const Button = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
 
   return (
     <StyledWrapper>
+      {user ? <button className="button" onClick={()=>{navigate("/home")}}>
+        Home
+        {/* <span className="button-span"> ─ it's free</span> */}
+      </button> : 
       <button className="button" onClick={()=>{navigate("/login")}}>
         Get started
         <span className="button-span"> ─ it's free</span>
-      </button>
+      </button>}
+      
     </StyledWrapper>
   );
 }

@@ -9,5 +9,5 @@ body {
 @tailwind utilities;
 
 html, body, #root {
-  background-color: #FAFAFA;
+  background-color: #F2EFE8;
 }

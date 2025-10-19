@@ -21,6 +21,17 @@ const Loader = () => {
 }
 
 const StyledWrapper = styled.div`
+position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden; /* ✅ Hides scrollbars */
+  background: #fafafa; /* optional: matches your app background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
   .loader {
     position: absolute;
     top: 50%;

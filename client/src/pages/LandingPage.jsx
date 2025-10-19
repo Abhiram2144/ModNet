@@ -7,7 +7,7 @@ export default function LandingPage() {
 
   return (
     <div
-  className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] pt-0 text-black font-[Kaisei_Decol] bg-[#FAFAFA] px-6 sm:px-10 text-center"
+  className="flex flex-col items-center justify-center h-screen overflow-hidden pt-0 text-black font-[Kaisei_Decol] bg-[#F2EFE8] px-6 sm:px-10 text-center"
   style={{ fontFamily: "'Kaisei Decol', serif" }}
 >
   <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold mb-4 tracking-tight">
@@ -18,7 +18,10 @@ export default function LandingPage() {
     modules — exchange ideas, notes, and motivation.
   </p>
 
+    <div>
   <StyleButton onclick={() => navigate("/login")} />
+
+    </div>
 
 </div>
 

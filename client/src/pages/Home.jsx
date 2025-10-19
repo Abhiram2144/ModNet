@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
-import { Loader2, MessageSquare } from "lucide-react";
-
+import { Loader2, MessageCircle } from "lucide-react";
+import Navbar from "../components/Navbar"
+import Footer from "../components/Footer"
+import ModuleContainer from "../components/ModuleContainer"
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
-
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,17 +36,13 @@ export default function Home() {
             modules:moduleid (
               id,
               name,
-              code,
-              description
+              code
             )
           `)
           .eq("userid", studentData.id);
 
         if (modError) throw modError;
-
-        const formattedModules =
-          userModules?.map((u) => u.modules).filter(Boolean) || [];
-
+        const formattedModules = userModules?.map((u) => u.modules) || [];
         setModules(formattedModules);
       } catch (err) {
         console.error("❌ Error fetching modules:", err.message);
@@ -60,18 +57,17 @@ export default function Home() {
 
   const handleModuleClick = (moduleId) => navigate(`/chat/${moduleId}`);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex items-center justify-center h-screen text-gray-500 font-[Kaisei_Decol]">
         <Loader2 className="animate-spin w-6 h-6 mr-2" />
         Loading modules...
       </div>
     );
-  }
 
-  if (modules.length === 0) {
+  if (modules.length === 0)
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-[#FAFAFA] text-black px-6 font-[Kaisei_Decol]">
+      <div className="flex flex-col items-center justify-center h-screen bg-[#F2EFE8] text-black px-6 font-[Kaisei_Decol]">
         <h2 className="text-2xl font-semibold mb-3">No Modules Found</h2>
         <p className="text-gray-600 text-center max-w-sm mb-6">
           You haven’t selected any modules yet. Add some to start discussions!
@@ -84,30 +80,22 @@ export default function Home() {
         </button>
       </div>
     );
-  }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-black font-[Kaisei_Decol] flex flex-col pb-16">
-      <div className="flex-1 overflow-y-auto">
-        {modules.map((mod) => (
-          <div
-            key={mod.id}
-            onClick={() => handleModuleClick(mod.id)}
-            className="flex items-center justify-between px-5 py-4 border-b border-gray-200 hover:bg-gray-100 cursor-pointer transition-all"
-          >
-            <div>
-              <h3 className="font-semibold text-lg">{mod.name}</h3>
-              <p className="text-gray-500 text-sm">{mod.code}</p>
-              {mod.description && (
-                <p className="text-gray-500 text-xs mt-1 line-clamp-1">
-                  {mod.description}
-                </p>
-              )}
-            </div>
-            <MessageSquare size={18} className="text-gray-500" />
-          </div>
-        ))}
+    <>
+    <Navbar/>
+    <div className="min-h-screen bg-[#F2EFE8] text-black font-[Kaisei_Decol] flex flex-col pt-16 pb-20 px-4">
+      <div className="max-w-md mx-auto w-full">
+        <h1 className="text-2xl font-semibold mb-6">Welcome 👋</h1>
+        
+        {/* Dynamic Module Grid */}
+  <ModuleContainer
+    modules={modules}
+  />
       </div>
     </div>
+    <Footer/>
+    </>
+    
   );
 }
