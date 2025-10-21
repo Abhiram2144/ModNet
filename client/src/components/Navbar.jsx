@@ -11,6 +11,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
+      alert("logout")
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       toast.success("Successfully logged out!");
