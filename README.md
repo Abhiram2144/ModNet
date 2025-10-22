@@ -3,3 +3,7 @@ ModNet is a PWA that connects university students through module-based communiti
 
 # Figma Design: 
 https://www.figma.com/design/7RV85A9m5O8JYLWkfeo12Y/ModNet?t=6NtcF61aM5IbUcux-0
+
+#Commands to run
+npm install
+npm run dev
