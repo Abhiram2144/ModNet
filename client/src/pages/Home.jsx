@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import { Loader2, MessageCircle } from "lucide-react";
-import Navbar from "../components/Navbar"
-import Footer from "../components/Footer"
-import ModuleContainer from "../components/ModuleContainer"
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import ModuleContainer from "../components/ModuleContainer";
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -31,14 +31,16 @@ export default function Home() {
 
         const { data: userModules, error: modError } = await supabase
           .from("user_modules")
-          .select(`
+          .select(
+            `
             moduleid,
             modules:moduleid (
               id,
               name,
               code
             )
-          `)
+          `
+          )
           .eq("userid", studentData.id);
 
         if (modError) throw modError;
@@ -59,7 +61,7 @@ export default function Home() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center h-screen text-gray-500 font-[Kaisei_Decol]">
+      <div className="flex items-center justify-center h-screen text-gray-500 ">
         <Loader2 className="animate-spin w-6 h-6 mr-2" />
         Loading modules...
       </div>
@@ -67,7 +69,7 @@ export default function Home() {
 
   if (modules.length === 0)
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-[#F2EFE8] text-black px-6 font-[Kaisei_Decol]">
+      <div className="flex flex-col items-center justify-center h-screen bg-[#F2EFE8] text-black px-6 ">
         <h2 className="text-2xl font-semibold mb-3">No Modules Found</h2>
         <p className="text-gray-600 text-center max-w-sm mb-6">
           You haven’t selected any modules yet. Add some to start discussions!
@@ -82,20 +84,17 @@ export default function Home() {
     );
 
   return (
-    <>
-    <Navbar/>
-    <div className="min-h-screen bg-[#F2EFE8] text-black font-[Kaisei_Decol] flex flex-col pt-16 pb-20 px-4">
-      <div className="max-w-md mx-auto w-full">
-        <h1 className="text-2xl font-semibold mb-6">Welcome 👋</h1>
-        
-        {/* Dynamic Module Grid */}
-  <ModuleContainer
-    modules={modules}
-  />
+    <div className="font-inter">
+      <Navbar />
+      <div className="min-h-screen bg-[#F2EFE8] text-black  flex flex-col pt-16 pb-20 px-4">
+        <div className="max-w-md mx-auto w-full flex flex-col items-center">
+          <h1 className="text-2xl font-semibold mb-6">Welcome 👋</h1>
+
+          {/* Dynamic Module Grid */}
+          <ModuleContainer modules={modules} />
+        </div>
       </div>
+      <Footer />
     </div>
-    <Footer/>
-    </>
-    
   );
 }

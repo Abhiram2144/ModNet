@@ -1,9 +1,10 @@
+@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;500;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
-body {
-  font-family: "Kaisei Decol", serif;
-}
 
+@theme {
+  --font-inter: "Inter", "sans-serif";
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,7 +14,6 @@ body,
 #root {
   background-color: #f2efe8;
 }
-
-@theme {
-  --font-inter: "Inter", "sans-serif";
+body {
+  font-family: "Kaisei Decol", serif;
 }

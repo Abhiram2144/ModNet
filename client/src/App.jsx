@@ -41,7 +41,7 @@ function MainLayout() {
   return (
     <div className="min-h-screen bg-[#F2EFE8] text-gray-900 flex flex-col">
       {/* {showNavbar && <Navbar />} */}
-      <main className="flex-grow pt-14 pb-16">
+      <main className="flex-grow ">
         {/* Add padding to avoid navbar overlap */}
         <AppRoutes />
       </main>

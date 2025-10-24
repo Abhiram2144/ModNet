@@ -8,31 +8,24 @@ export default function Footer() {
 
   if (!user) return null;
 
+  const buttons = [
+    { label: "Home", icon: Home, path: "/home" },
+    { label: "Account", icon: User, path: "/account" },
+    { label: "Review", icon: MessageSquare, path: "/review" },
+  ];
+
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-[#FAFAFA] border-t border-gray-200 flex justify-around py-3">
-      <button
-        onClick={() => navigate("/home")}
-        className="flex flex-col items-center text-gray-600 hover:text-[#7D3C3C] transition"
-      >
-        <Home size={20} />
-        <span className="text-xs mt-1 font-[Kaisei_Decol]">Home</span>
-      </button>
-
-      <button
-        onClick={() => navigate("/account")}
-        className="flex flex-col items-center text-gray-600 hover:text-[#7D3C3C] transition"
-      >
-        <User size={20} />
-        <span className="text-xs mt-1 font-[Kaisei_Decol]">Account</span>
-      </button>
-
-      <button
-        onClick={() => navigate("/review")}
-        className="flex flex-col items-center text-gray-600 hover:text-[#7D3C3C] transition"
-      >
-        <MessageSquare size={20} />
-        <span className="text-xs mt-1 font-[Kaisei_Decol]">Review</span>
-      </button>
+    <footer className="fixed bottom-0 left-0 right-0 bg-[#FAFAFA] border-t border-gray-200 flex justify-around py-3 font-inter">
+      {buttons.map(({ label, icon: Icon, path }) => (
+        <button
+          key={label}
+          onClick={() => navigate(path)}
+          className="flex flex-col items-center text-gray-600 hover:text-[#7D3C3C] transition"
+        >
+          <Icon size={20} />
+          <span className="text-xs mt-1">{label}</span>
+        </button>
+      ))}
     </footer>
   );
 }

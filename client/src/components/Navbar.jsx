@@ -4,6 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 import logo from "../assets/logo80.png";
 import LoginButton from "../components/LoginButton";
+import { LogOut } from "lucide-react";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-[#FAFAFA] border-b border-gray-300 shadow-sm  flex justify-between items-center z-50">
+    <nav className="fixed top-0 left-0 w-full bg-[#FAFAFA] border-b px-2 border-gray-300 shadow-sm min-h-[50px]  flex justify-between items-center z-50">
       {/* Logo Section */}
       <Link
         to="/home"
@@ -37,13 +38,17 @@ export default function Navbar() {
       </Link>
 
       {/* Navigation Links + Auth Buttons */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-4 ">
         {user ? (
-          <LoginButton text1="logout" text2="now" onClick={handleLogout} />
+          <button
+            className="bg-amber-200 p-2 rounded-md flex items-center gap-2"
+            onClick={handleLogout}
+          >
+            <LogOut size={18} className="text-gray-700" />
+          </button>
         ) : (
-          <LoginButton
-            text1="login"
-            text2="now"
+          <button
+            className="bg-amber-200 p-2 rounded-md"
             onClick={() => {
               navigate("/login");
             }}
