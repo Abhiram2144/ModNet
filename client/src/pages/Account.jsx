@@ -12,12 +12,16 @@ const AccountPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  const PFPS = import.meta.env.VITE_PFPS ? JSON.parse(import.meta.env.VITE_PFPS) : [];
+  const PFPS = import.meta.env.VITE_PFPS
+    ? JSON.parse(import.meta.env.VITE_PFPS)
+    : [];
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) throw new Error("User not found.");
 
         const { data: dbUser, error: userErr } = await supabase
@@ -64,90 +68,99 @@ const AccountPage = () => {
 
   return (
     <div>
-    <div className="min-h-screen bg-black text-white flex flex-col items-center px-6 pt-24 pb-10">
-    <Navbar/>
-      {/* Profile Section */}
-      <div className="flex flex-col items-center text-center">
-        <div className="relative">
-          <img
-            src={userData?.profileimage || "https://i.imgur.com/placeholder.png"}
-            alt="Profile"
-            className="w-20 h-20 rounded-full object-cover"
-          />
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="absolute bottom-0 right-0 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700 transition-all"
-          >
-            <FaEdit size={12} />
-          </button>
-        </div>
-
-        <h2 className="mt-4 text-xl font-semibold">{userData?.displayname}</h2>
-        <p className="text-gray-400 text-sm">{userData?.email}</p>
-      </div>
-
-      {/* Info Section (Boxed layout) */}
-      <div className="w-full max-w-md mt-8 space-y-5">
-        {/* Course Info */}
-        <div className="bg-neutral-900 rounded-2xl px-6 py-5">
-          <h3 className="text-center text-sm text-gray-400 uppercase mb-2 tracking-wide">
-            Course
-          </h3>
-          <p className="text-center text-base font-medium text-white">
-            {userData?.courseName}
-          </p>
-        </div>
-
-        {/* Modules Info */}
-        <div className="bg-neutral-900 rounded-2xl px-6 py-5">
-          <h3 className="text-center text-sm text-gray-400 uppercase mb-2 tracking-wide">
-            Modules
-          </h3>
-          {modules.length > 0 ? (
-            <ul className="text-gray-200 text-sm space-y-1 text-center">
-              {modules.map((mod, idx) => (
-                <li key={idx}>{mod}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 text-sm text-center">
-              No modules selected yet.
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Profile Image Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <Modal
-            PFPS={PFPS}
-            onClose={() => setIsModalOpen(false)}
-            onConfirm={async (selectedUrl) => {
-              if (!selectedUrl) return;
-              setUpdating(true);
-              try {
-                const { data: { user } } = await supabase.auth.getUser();
-                const { error } = await supabase
-                  .from("students")
-                  .update({ profileimage: selectedUrl })
-                  .eq("email", user.email);
-
-                if (error) throw error;
-                setUserData((prev) => ({ ...prev, profileimage: selectedUrl }));
-                setIsModalOpen(false);
-              } catch (err) {
-                console.error("❌ Error updating profile picture:", err);
-                alert("Failed to update profile picture.");
-              } finally {
-                setUpdating(false);
+      <div className="min-h-screen   bg-black text-white flex flex-col items-center px-6 pt-24 pb-10">
+        <Navbar />
+        {/* Profile Section */}
+        <div className="flex flex-col items-center text-center">
+          <div className="relative">
+            <img
+              src={
+                userData?.profileimage || "https://i.imgur.com/placeholder.png"
               }
-            }}
-            updating={updating}
-          />
+              alt="Profile"
+              className="w-20 h-20 rounded-full object-cover"
+            />
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="absolute bottom-0 right-0 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700 transition-all"
+            >
+              <FaEdit size={12} />
+            </button>
+          </div>
+
+          <h2 className="mt-4 text-xl font-semibold">
+            {userData?.displayname}
+          </h2>
+          <p className="text-gray-400 text-sm">{userData?.email}</p>
         </div>
-      )}
-    </div>
+
+        {/* Info Section (Boxed layout) */}
+        <div className="w-full max-w-md mt-8 space-y-5">
+          {/* Course Info */}
+          <div className="bg-neutral-900 rounded-2xl px-6 py-5">
+            <h3 className="text-center text-sm text-gray-400 uppercase mb-2 tracking-wide">
+              Course
+            </h3>
+            <p className="text-center text-base font-medium text-white">
+              {userData?.courseName}
+            </p>
+          </div>
+
+          {/* Modules Info */}
+          <div className="bg-neutral-900 rounded-2xl px-6 py-5">
+            <h3 className="text-center text-sm text-gray-400 uppercase mb-2 tracking-wide">
+              Modules
+            </h3>
+            {modules.length > 0 ? (
+              <ul className="text-gray-200 text-sm space-y-1 text-center">
+                {modules.map((mod, idx) => (
+                  <li key={idx}>{mod}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500 text-sm text-center">
+                No modules selected yet.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Profile Image Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+            <Modal
+              PFPS={PFPS}
+              onClose={() => setIsModalOpen(false)}
+              onConfirm={async (selectedUrl) => {
+                if (!selectedUrl) return;
+                setUpdating(true);
+                try {
+                  const {
+                    data: { user },
+                  } = await supabase.auth.getUser();
+                  const { error } = await supabase
+                    .from("students")
+                    .update({ profileimage: selectedUrl })
+                    .eq("email", user.email);
+
+                  if (error) throw error;
+                  setUserData((prev) => ({
+                    ...prev,
+                    profileimage: selectedUrl,
+                  }));
+                  setIsModalOpen(false);
+                } catch (err) {
+                  console.error("❌ Error updating profile picture:", err);
+                  alert("Failed to update profile picture.");
+                } finally {
+                  setUpdating(false);
+                }
+              }}
+              updating={updating}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
