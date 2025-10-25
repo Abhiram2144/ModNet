@@ -20,23 +20,11 @@ function App() {
 function MainLayout() {
   const location = useLocation();
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const isLoginPage = location.pathname === "/login";
+  // Show the global Loader only when AuthContext is actively preloading data for the session.
+  // This prevents the Loader from flashing on every route change.
+  const { preloading } = useAuth();
 
-  useEffect(() => {
-    if (!isLoginPage) {
-      setIsLoading(true);
-      const timer = setTimeout(() => setIsLoading(false), 1200);
-      return () => clearTimeout(timer);
-    } else {
-      setIsLoading(false);
-    }
-  }, [location.pathname]);
-
-  // const showNavbar = location.pathname !== "/login";
-  // const showFooter = location.pathname === "/home";
-
-  if (isLoading) return <Loader />;
+  if (preloading) return <Loader />;
 
   return (
     <div className="min-h-screen bg-[#F2EFE8] text-gray-900 flex flex-col">

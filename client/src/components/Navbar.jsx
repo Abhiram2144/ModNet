@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 import logo from "../assets/logo80.png";
 import LoginButton from "../components/LoginButton";
-import { LogOut } from "lucide-react";
+import { LogOut, LogIn } from "lucide-react";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -12,12 +12,12 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      alert("logout");
+      // alert("logout");
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       toast.success("Successfully logged out!");
       setTimeout(() => {
-        navigate("/login");
+        navigate("/");
         window.location.reload();
       }, 600);
     } catch (err) {
@@ -52,7 +52,9 @@ export default function Navbar() {
             onClick={() => {
               navigate("/login");
             }}
-          />
+          >
+            <LogIn size={18} className="text-gray-700" />
+          </button>
         )}
       </div>
     </nav>

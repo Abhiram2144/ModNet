@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../contexts/AuthContext";
 import { Loader2, Star } from "lucide-react";
 import Footer from "../components/Footer";
+import Navbar from "../components/Navbar";
 
 const ReviewPage = () => {
   const [userData, setUserData] = useState(null);
   const [review, setReview] = useState(0);
   const [suggestion, setSuggestion] = useState("");
-  const [loading, setLoading] = useState(true);
+  const { profile } = useAuth();
+  // avoid showing the loader if profile was preloaded
+  const [loading, setLoading] = useState(!profile);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [hover, setHover] = useState(0);
@@ -15,6 +19,13 @@ const ReviewPage = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        // If profile was preloaded in AuthContext, use it
+        if (profile) {
+          setUserData(profile);
+          setLoading(false);
+          return;
+        }
+
         const {
           data: { user },
           error: authError,
@@ -22,7 +33,7 @@ const ReviewPage = () => {
 
         if (authError || !user) throw new Error("User not authenticated");
 
-        // Fetch user record from your `user` table
+        // Fetch user record from your `students` table
         const { data: dbUser, error } = await supabase
           .from("students")
           .select("id, displayname, email, canreview, review, suggestion")
@@ -39,7 +50,7 @@ const ReviewPage = () => {
     };
 
     fetchUserData();
-  }, []);
+  }, [profile]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -89,14 +100,16 @@ const ReviewPage = () => {
       <div className="flex flex-col items-center justify-center h-screen text-center px-6 bg-white text-black">
         <h2 className="text-2xl font-semibold mb-3">Thank You!</h2>
         <p className="text-gray-600 max-w-md">
-          You’ve already submitted your feedback. Your input helps ModNet evolve
+          You've already submitted your feedback. Your input helps ModNet evolve
           into a better platform.
         </p>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-white text-black flex flex-col items-center px-4 py-10 font-inter">
+    <div className="font-inter">
+      <Navbar/>
+  <div className="min-h-screen bg-white text-black flex flex-col items-center px-4 pt-16 pb-10 font-inter">
       <div className="w-full max-w-lg bg-white rounded-2xl p-6 border border-gray-200 shadow-md">
         <h1 className="text-2xl font-bold mb-6 text-center">
           Share Your Feedback
@@ -158,6 +171,7 @@ const ReviewPage = () => {
         </form>
       </div>
       <Footer />
+    </div>
     </div>
   );
 };

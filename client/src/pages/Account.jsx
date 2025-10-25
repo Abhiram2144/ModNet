@@ -5,11 +5,14 @@ import { Loader2 } from "lucide-react";
 import Modal from "../components/Modal";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { useAuth } from "../contexts/AuthContext";
 
 const AccountPage = () => {
   const [userData, setUserData] = useState(null);
   const [modules, setModules] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { profile, userModules, setProfile } = useAuth();
+  // if profile is already preloaded, don't show the loader
+  const [loading, setLoading] = useState(!profile);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
 
@@ -20,35 +23,58 @@ const AccountPage = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) throw new Error("User not found.");
+        // If profile was preloaded in context, use it
+        if (profile) {
+          const { data: courseData } = await supabase
+            .from("courses")
+            .select("name")
+            .eq("id", profile.courseid)
+            .single();
 
-        const { data: dbUser, error: userErr } = await supabase
-          .from("students")
-          .select("id, displayname, email, profileimage, courseid")
-          .eq("email", user.email)
-          .single();
-        if (userErr) throw userErr;
+          setUserData({
+            ...profile,
+            courseName: courseData?.name || "No course selected",
+          });
 
-        const { data: courseData } = await supabase
-          .from("courses")
-          .select("name")
-          .eq("id", dbUser.courseid)
-          .single();
+          if (userModules) setModules(userModules.map((m) => m.name));
+          else {
+            const { data: moduleData } = await supabase
+              .from("user_modules")
+              .select("moduleid, modules(name)")
+              .eq("userid", profile.id);
+            setModules(moduleData?.map((m) => m.modules.name) || []);
+          }
+        } else {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (!user) throw new Error("User not found.");
 
-        const { data: moduleData } = await supabase
-          .from("user_modules")
-          .select("moduleid, modules(name)")
-          .eq("userid", dbUser.id);
+          const { data: dbUser, error: userErr } = await supabase
+            .from("students")
+            .select("id, displayname, email, profileimage, courseid")
+            .eq("email", user.email)
+            .single();
+          if (userErr) throw userErr;
 
-        setUserData({
-          ...dbUser,
-          courseName: courseData?.name || "No course selected",
-        });
+          const { data: courseData } = await supabase
+            .from("courses")
+            .select("name")
+            .eq("id", dbUser.courseid)
+            .single();
 
-        setModules(moduleData?.map((m) => m.modules.name) || []);
+          const { data: moduleData } = await supabase
+            .from("user_modules")
+            .select("moduleid, modules(name)")
+            .eq("userid", dbUser.id);
+
+          setUserData({
+            ...dbUser,
+            courseName: courseData?.name || "No course selected",
+          });
+
+          setModules(moduleData?.map((m) => m.modules.name) || []);
+        }
       } catch (err) {
         console.error("❌ Error fetching user data:", err);
       } finally {
@@ -149,10 +175,15 @@ const AccountPage = () => {
                     .eq("email", user.email);
 
                   if (error) throw error;
+                  // update local page state
                   setUserData((prev) => ({
                     ...prev,
                     profileimage: selectedUrl,
                   }));
+                  // update global context so other components reflect the change immediately
+                  if (setProfile) {
+                    setProfile((prev) => ({ ...(prev || {}), profileimage: selectedUrl }));
+                  }
                   setIsModalOpen(false);
                 } catch (err) {
                   console.error("❌ Error updating profile picture:", err);

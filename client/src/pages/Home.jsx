@@ -10,11 +10,20 @@ export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [modules, setModules] = useState([]);
-  const [loading, setLoading] = useState(true);
-
+  const { userModules } = useAuth();
+  // initialize loading to false if modules were preloaded in AuthContext
+  const [loading, setLoading] = useState(!userModules);
+  const username = user.email.split("@")[0]
   useEffect(() => {
     if (!user) {
       navigate("/login");
+      return;
+    }
+
+    // If we already preloaded user modules in AuthContext, use them
+    if (userModules) {
+      setModules(userModules);
+      setLoading(false);
       return;
     }
 
@@ -29,7 +38,7 @@ export default function Home() {
         if (studentError) throw studentError;
         if (!studentData) throw new Error("Student record not found.");
 
-        const { data: userModules, error: modError } = await supabase
+        const { data: userModulesResp, error: modError } = await supabase
           .from("user_modules")
           .select(
             `
@@ -44,7 +53,7 @@ export default function Home() {
           .eq("userid", studentData.id);
 
         if (modError) throw modError;
-        const formattedModules = userModules?.map((u) => u.modules) || [];
+        const formattedModules = userModulesResp?.map((u) => u.modules) || [];
         setModules(formattedModules);
       } catch (err) {
         console.error("❌ Error fetching modules:", err.message);
@@ -57,8 +66,9 @@ export default function Home() {
     fetchModules();
   }, [user, navigate]);
 
-  const handleModuleClick = (moduleId) => navigate(`/chat/${moduleId}`);
-
+  // const handleModuleClick = (moduleId) => navigate(`/chat/${moduleId}`);
+  
+    
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen text-gray-500 ">
@@ -72,7 +82,7 @@ export default function Home() {
       <div className="flex flex-col items-center justify-center h-screen bg-[#F2EFE8] text-black px-6 ">
         <h2 className="text-2xl font-semibold mb-3">No Modules Found</h2>
         <p className="text-gray-600 text-center max-w-sm mb-6">
-          You haven’t selected any modules yet. Add some to start discussions!
+          You haven't selected any modules yet. Add some to start discussions!
         </p>
         <button
           onClick={() => navigate("/modules")}
@@ -88,7 +98,7 @@ export default function Home() {
       <Navbar />
       <div className="min-h-screen bg-[#F2EFE8] text-black  flex flex-col pt-16 pb-20 px-4">
         <div className="max-w-md mx-auto w-full flex flex-col items-center">
-          <h1 className="text-2xl font-semibold mb-6">Welcome 👋</h1>
+          <h1 className="text-2xl font-semibold mb-6">Welcome <span className="font-bold text-yellow-500">{username}</span></h1>
 
           {/* Dynamic Module Grid */}
           <ModuleContainer modules={modules} />
