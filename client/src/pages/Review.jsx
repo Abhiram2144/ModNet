@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { Loader2, Star } from "lucide-react";
+import Footer from "../components/Footer";
 
 const ReviewPage = () => {
   const [userData, setUserData] = useState(null);
@@ -42,7 +43,8 @@ const ReviewPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (review === 0) return alert("Please select a star rating before submitting.");
+    if (review === 0)
+      return alert("Please select a star rating before submitting.");
 
     try {
       setSubmitting(true);
@@ -77,31 +79,33 @@ const ReviewPage = () => {
 
   if (!userData)
     return (
-      <div className="flex items-center justify-center h-screen text-gray-400">
+      <div className="flex items-center justify-center h-screen text-gray-600 bg-white">
         Unable to load user data.
       </div>
     );
 
   if (!userData.canreview || submitted)
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-center px-6 bg-black text-white">
+      <div className="flex flex-col items-center justify-center h-screen text-center px-6 bg-white text-black">
         <h2 className="text-2xl font-semibold mb-3">Thank You!</h2>
-        <p className="text-gray-400 max-w-md">
-          You’ve already submitted your feedback.  
-          Your input helps ModNet evolve into a better platform.
+        <p className="text-gray-600 max-w-md">
+          You’ve already submitted your feedback. Your input helps ModNet evolve
+          into a better platform.
         </p>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center px-4 py-10">
-      <div className="w-full max-w-lg bg-neutral-900 rounded-2xl p-6 border border-gray-800 shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Share Your Feedback</h1>
+    <div className="min-h-screen bg-white text-black flex flex-col items-center px-4 py-10 font-inter">
+      <div className="w-full max-w-lg bg-white rounded-2xl p-6 border border-gray-200 shadow-md">
+        <h1 className="text-2xl font-bold mb-6 text-center">
+          Share Your Feedback
+        </h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* STAR RATING */}
           <div className="flex flex-col items-center">
-            <label className="text-sm text-gray-400 mb-3">
+            <label className="text-sm text-gray-600 mb-3">
               How was your experience?
             </label>
             <div className="flex space-x-2">
@@ -114,13 +118,13 @@ const ReviewPage = () => {
                   className={`w-8 h-8 cursor-pointer transition-transform duration-150 ${
                     star <= (hover || review)
                       ? "text-yellow-400 scale-110"
-                      : "text-gray-600"
+                      : "text-gray-300"
                   }`}
                   fill={star <= (hover || review) ? "#facc15" : "none"}
                 />
               ))}
             </div>
-            <p className="text-gray-400 text-sm mt-2">
+            <p className="text-gray-600 text-sm mt-2">
               {review === 0
                 ? "Tap a star to rate"
                 : `You rated ${review} star${review > 1 ? "s" : ""}`}
@@ -129,14 +133,14 @@ const ReviewPage = () => {
 
           {/* SUGGESTION FIELD */}
           <div>
-            <label className="text-sm text-gray-400 mb-2 block">
+            <label className="text-sm text-gray-600 mb-2 block">
               Any suggestions for improvement? (Optional)
             </label>
             <textarea
               value={suggestion}
               onChange={(e) => setSuggestion(e.target.value)}
               placeholder="How can we make ModNet better?"
-              className="w-full h-24 bg-black border border-gray-700 rounded-xl p-3 text-sm text-gray-200 resize-none focus:outline-none focus:border-gray-500"
+              className="w-full h-24 bg-gray-100 border border-gray-300 rounded-xl p-3 text-sm text-gray-800 resize-none focus:outline-none focus:border-gray-500"
             />
           </div>
 
@@ -145,14 +149,15 @@ const ReviewPage = () => {
             disabled={submitting}
             className={`mt-4 w-full py-3 rounded-xl text-sm font-semibold transition-all ${
               submitting
-                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                : "bg-gray-200 text-black hover:bg-white"
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-black text-white hover:bg-gray-800"
             }`}
           >
             {submitting ? "Submitting..." : "Submit Review"}
           </button>
         </form>
       </div>
+      <Footer />
     </div>
   );
 };

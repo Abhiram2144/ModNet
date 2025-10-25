@@ -1,27 +1,35 @@
-import React from 'react';
-import styled from 'styled-components';
+import React from "react";
+import styled from "styled-components";
 
 const Loader = () => {
   return (
     <StyledWrapper>
       <div>
         <div className="loader">
-          <span><span /><span /><span /><span /></span>
+          <span>
+            <span />
+            <span />
+            <span />
+            <span />
+          </span>
           <div className="base">
             <span />
             <div className="face" />
           </div>
         </div>
         <div className="longfazers">
-          <span /><span /><span /><span />
+          <span />
+          <span />
+          <span />
+          <span />
         </div>
       </div>
     </StyledWrapper>
   );
-}
+};
 
 const StyledWrapper = styled.div`
-position: fixed;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
@@ -259,6 +267,7 @@ position: fixed;
       left: -100%;
       opacity: 0;
     }
-  }`;
+  }
+`;
 
 export default Loader;
