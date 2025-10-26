@@ -78,15 +78,20 @@ const ModulesSelect = () => {
       throw new Error("Authentication error. Please log in again.");
     }
 
-    // Step 2: Find user in your public.user table via email
+    // Step 2: Find user in the `students` table via Supabase auth user id
+    // (your students table stores the auth userid in the `userid` column per AuthContext)
     const { data: userRecord, error: userFetchError } = await supabase
       .from("students")
       .select("id")
-      .eq("email", user.email)
-      .single();
+      .eq("userid", user.id)
+      .maybeSingle();
 
-    if (userFetchError || !userRecord) {
-      throw new Error("User record not found in public.user table.");
+    if (userFetchError) {
+      throw userFetchError;
+    }
+
+    if (!userRecord) {
+      throw new Error("User record not found in the students table. Please complete your profile.");
     }
 
     // Step 3: Update selected course
