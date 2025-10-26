@@ -33,7 +33,7 @@ export default function Navbar() {
         to="/home"
         className="flex items-center gap-2 hover:opacity-90 transition"
       >
-        <img src={logo} alt="ModNet Logo" className="w-8 h-8 object-contain" />
+        <img src={logo} alt="ModNet Logo" className="w-12 h-12 object-contain" />
         {/* <span className="text-xl font-bold text-gray-800">ModNet</span> */}
       </Link>
 

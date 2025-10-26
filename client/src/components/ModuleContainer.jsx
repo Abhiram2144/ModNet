@@ -15,7 +15,7 @@ const Button = ({ modules }) => {
             key={mod.id}
             className={`card${
               idx + 1
-            } bg-white flex h-[4rem] w-full rounded-md p-4 font-medium justify-start items-center shadow-md hover:shadow-lg transition`}
+            } bg-white flex h-[4rem] w-full rounded-md p-4 font-medium justify-start items-center shadow-md hover:shadow-lg hover:cursor-pointer transition`}
             onClick={() => navigate(`/chat/${mod.id}`)}
           >
             <span className="module-name" title={mod.name}>
