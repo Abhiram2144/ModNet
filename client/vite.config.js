@@ -3,12 +3,8 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import tailwindcss from '@tailwindcss/vite'
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  build: {
-    rollupOptions: {
-      external: ['@supabase/supabase-js'],
-    },
-  },
   plugins: [
     react(),
     tailwindcss(),
@@ -24,15 +20,23 @@ export default defineConfig({
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    })
-  ]
+            type: 'image/png',
+          },
+        ],
+      },
+    }),
+  ],
+  optimizeDeps: {
+    include: ['@supabase/supabase-js'], // ✅ force Vite to prebundle Supabase
+  },
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true, // ✅ ensure mixed modules work properly
+    },
+  },
 })
