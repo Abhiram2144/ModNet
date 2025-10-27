@@ -95,16 +95,8 @@ const ReviewPage = () => {
       </div>
     );
 
-  if (!userData.canreview || submitted)
-    return (
-      <div className="flex flex-col items-center justify-center h-screen text-center px-6 bg-white text-black">
-        <h2 className="text-2xl font-semibold mb-3">Thank You!</h2>
-        <p className="text-gray-600 max-w-md">
-          You've already submitted your feedback. Your input helps ModNet evolve
-          into a better platform.
-        </p>
-      </div>
-    );
+  // Do not unmount the navbar/footer after submission — show the message inline
+  // The UI below will render either the form or a thank-you message inside the same frame
 
   return (
     <div className="font-inter">
@@ -115,7 +107,17 @@ const ReviewPage = () => {
           Share Your Feedback
         </h1>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {(!userData.canreview || submitted) ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <h2 className="text-2xl font-semibold mb-3">Thank You!</h2>
+            <p className="text-gray-600 max-w-md text-center">
+              {submitted
+                ? "Thanks — your feedback has been submitted. Your input helps ModNet become a better platform."
+                : "You've already submitted your feedback. Your input helps ModNet evolve into a better platform."}
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* STAR RATING */}
           <div className="flex flex-col items-center">
             <label className="text-sm text-gray-600 mb-3">
@@ -169,6 +171,7 @@ const ReviewPage = () => {
             {submitting ? "Submitting..." : "Submit Review"}
           </button>
         </form>
+        )}
       </div>
       <Footer />
     </div>
