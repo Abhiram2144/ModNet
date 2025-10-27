@@ -4,6 +4,8 @@
 
 @theme {
   --font-inter: "Inter", "sans-serif";
+  --color-primary: #9b0b21;
+  --color-bgprimary: #f2efe8;
 }
 @tailwind base;
 @tailwind components;

@@ -16,7 +16,9 @@ export default function ModuleChat() {
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
   // If userModules are preloaded we can determine access synchronously
-  const initialAllowed = userModules ? Boolean(userModules.some((m) => String(m.id) === String(moduleId))) : null;
+  const initialAllowed = userModules
+    ? Boolean(userModules.some((m) => String(m.id) === String(moduleId)))
+    : null;
   const [allowed, setAllowed] = useState(initialAllowed);
   const messagesEndRef = useRef(null);
 
@@ -35,11 +37,18 @@ export default function ModuleChat() {
       try {
         // If profile preloaded, use it
         if (profile) {
-          setStudent({ id: profile.id, authid: profile.userid, displayname: profile.displayname, profileimage: profile.profileimage });
+          setStudent({
+            id: profile.id,
+            authid: profile.userid,
+            displayname: profile.displayname,
+            profileimage: profile.profileimage,
+          });
 
           // Check access via preloaded userModules if available
           if (userModules) {
-            const has = userModules.some((m) => String(m.id) === String(moduleId));
+            const has = userModules.some(
+              (m) => String(m.id) === String(moduleId)
+            );
             setAllowed(Boolean(has));
           } else {
             const { data: access, error: accessError } = await supabase
@@ -59,7 +68,8 @@ export default function ModuleChat() {
             .eq("userid", user.id)
             .maybeSingle();
 
-          if (studentError || !studentData) throw new Error("Student not found");
+          if (studentError || !studentData)
+            throw new Error("Student not found");
           setStudent({ ...studentData, authid: user.id });
 
           const { data: access, error: accessError } = await supabase
@@ -86,7 +96,8 @@ export default function ModuleChat() {
             .eq("id", moduleId)
             .maybeSingle();
 
-          if (modError) console.warn("Failed to load module details:", modError.message);
+          if (modError)
+            console.warn("Failed to load module details:", modError.message);
           else if (mod) setModuleInfo(mod);
         } catch (err) {
           console.warn("Error fetching module details:", err.message);
@@ -118,11 +129,11 @@ export default function ModuleChat() {
               filter: `moduleid=eq.${moduleId}`,
             },
             (payload) => {
-                setMessages((prev) => {
-                  // avoid duplicates if the message is already present (e.g., inserted locally)
-                  if (prev.some((m) => m.id === payload.new.id)) return prev;
-                  return [...prev, payload.new];
-                });
+              setMessages((prev) => {
+                // avoid duplicates if the message is already present (e.g., inserted locally)
+                if (prev.some((m) => m.id === payload.new.id)) return prev;
+                return [...prev, payload.new];
+              });
             }
           )
           .subscribe();
@@ -149,7 +160,9 @@ export default function ModuleChat() {
       // Upload file if present
       if (file) {
         const fileExt = file.name.split(".").pop();
-        const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const uniqueName = `${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2)}.${fileExt}`;
         const filePath = `${user.id}/${uniqueName}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -224,7 +237,9 @@ export default function ModuleChat() {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gray-100 text-gray-900 text-center px-6">
         <h2 className="text-2xl font-semibold mb-2">Access Denied 🚫</h2>
-        <p className="text-gray-600 mb-6 max-w-sm">You don't have access to this module's chat.</p>
+        <p className="text-gray-600 mb-6 max-w-sm">
+          You don't have access to this module's chat.
+        </p>
         <button
           onClick={() => navigate("/home")}
           className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-full transition"
@@ -238,51 +253,99 @@ export default function ModuleChat() {
   return (
     <div className="flex flex-col h-screen  text-gray-900 font-inter  ">
       {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b bg-gray-100  shadow-sm">
-        <button onClick={() => navigate("/home") } className="hover:cursor-pointer text-gray-500 hover:text-gray-700 mr-3">
+      <div className="flex items-center px-4 py-3   shadow-sm h-16 ">
+        <button
+          onClick={() => navigate("/home")}
+          className="hover:cursor-pointer text-gray-500 hover:text-gray-700 mr-3"
+        >
           <ArrowLeft size={22} />
         </button>
-        <h1 className="text-lg font-semibold">{moduleInfo?.name ? moduleInfo.name : `Module ${moduleId}`}</h1>
+        <h1 className="text-lg font-semibold truncate">
+          {moduleInfo?.name ? moduleInfo.name : `Module ${moduleId}`}
+        </h1>
       </div>
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-150px)] bg-gray-50 scrollbar-thin scrollbar-thumb-gray-300">
         {messages.length === 0 ? (
-          <p className="text-gray-500 text-center mt-10">Start the conversation 💬</p>
+          <p className="text-gray-500 text-center mt-10">
+            Start the conversation 💬
+          </p>
         ) : (
           messages.map((msg) => {
             const mine = isMyMessage(msg);
             return (
-              <div key={msg.id} className={`flex items-end ${mine ? "justify-end" : "justify-start"}`}>
+              <div
+                key={msg.id}
+                className={`flex items-end ${
+                  mine ? "justify-end" : "justify-start"
+                }`}
+              >
                 {!mine &&
                   (msg.students?.profileimage ? (
-                    <img src={msg.students.profileimage} alt="" className="w-9 h-9 rounded-full mr-2 border border-gray-300" />
+                    <img
+                      src={msg.students.profileimage}
+                      alt=""
+                      className="w-9 h-9 rounded-full mr-2 border border-gray-300"
+                    />
                   ) : (
-                    <div className="w-9 h-9 rounded-full mr-2 border border-gray-300 bg-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg">{(msg.students?.displayname || "U")[0].toUpperCase()}</div>
+                    <div className="w-9 h-9 rounded-full mr-2 border border-gray-300 bg-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg">
+                      {(msg.students?.displayname || "U")[0].toUpperCase()}
+                    </div>
                   ))}
-                <div className={`max-w-[70%] px-4 py-2 rounded-2xl shadow-sm  ${mine ? "bg-blue-600 text-white rounded-br-none" : "bg-gray-200 text-gray-800 rounded-bl-none"}`}>
-                  {!mine && <span className="block text-xs text-gray-500 mb-1 ">{msg.students?.displayname || "User"}</span>}
-                  {msg.content && <p className="text-sm  font-medium ">{msg.content}</p>}
+                <div
+                  className={`max-w-[70%] px-4 py-2 rounded-2xl shadow-sm  ${
+                    mine
+                      ? "bg-blue-600 text-white rounded-br-none"
+                      : "bg-gray-200 text-gray-800 rounded-bl-none"
+                  }`}
+                >
+                  {!mine && (
+                    <span className="block text-xs text-gray-500 mb-1 ">
+                      {msg.students?.displayname || "User"}
+                    </span>
+                  )}
+                  {msg.content && (
+                    <p className="text-sm  font-medium ">{msg.content}</p>
+                  )}
                   {msg.attachment_url && (
-                    <a href={msg.attachment_url} target="_blank" rel="noreferrer" className={`block mt-1 text-xs underline ${mine ? "text-blue-100" : "text-blue-600"}`}>
+                    <a
+                      href={msg.attachment_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={`block mt-1 text-xs underline ${
+                        mine ? "text-blue-100" : "text-blue-600"
+                      }`}
+                    >
                       {msg.attachment_name || "View Attachment"}
                     </a>
                   )}
 
-                  <span className={`block text-[10px] mt-1 ${mine ? "text-blue-100" : "text-gray-500"} text-right`}>
+                  <span
+                    className={`block text-[10px] mt-1 ${
+                      mine ? "text-blue-100" : "text-gray-500"
+                    } text-right`}
+                  >
                     {new Date(msg.created_at).toLocaleTimeString("en-GB", {
                       hour: "2-digit",
                       minute: "2-digit",
                       hour12: true,
-                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                      timeZone:
+                        Intl.DateTimeFormat().resolvedOptions().timeZone,
                     })}
                   </span>
                 </div>
                 {mine &&
                   (student?.profileimage ? (
-                    <img src={student.profileimage} alt="" className="w-9 h-9 rounded-full ml-2 border border-gray-300" />
+                    <img
+                      src={student.profileimage}
+                      alt=""
+                      className="w-9 h-9 rounded-full ml-2 border border-gray-300"
+                    />
                   ) : (
-                    <div className="w-9 h-9 rounded-full ml-2 border border-gray-300 bg-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg">{(student?.displayname || "U")[0].toUpperCase()}</div>
+                    <div className="w-9 h-9 rounded-full ml-2 border border-gray-300 bg-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg">
+                      {(student?.displayname || "U")[0].toUpperCase()}
+                    </div>
                   ))}
               </div>
             );
@@ -290,13 +353,24 @@ export default function ModuleChat() {
         )}
         <div ref={messagesEndRef}></div>
       </div>
-      <div className="p-4 flex items-center w-full justify-between  h-[100px] bg-gray-100">
+      <div className="p-4 flex items-center w-full justify-between  h-max bg-gray-100">
         {/* Input Bar */}
 
-        <form onSubmit={handleSend} className="flex items-center justify-between   space-x-4  w-full h-full ">
-          <label htmlFor="file-input" className="cursor-pointer text-gray-500 hover:text-gray-700">
+        <form
+          onSubmit={handleSend}
+          className="flex items-center justify-around space-x-4  w-full h-full "
+        >
+          <label
+            htmlFor="file-input"
+            className="cursor-pointer text-gray-500 hover:text-gray-700"
+          >
             <Paperclip size={20} />
-            <input id="file-input" type="file" className="hidden" onChange={(e) => setFile(e.target.files[0])} />
+            <input
+              id="file-input"
+              type="file"
+              className="hidden"
+              onChange={(e) => setFile(e.target.files[0])}
+            />
           </label>
           <input
             type="text"
@@ -306,7 +380,11 @@ export default function ModuleChat() {
             className="p-2 rounded-full bg-white border border-gray-300 w-[calc(80%-2rem)] focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
 
-          <button type="submit" disabled={sending} className="bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 flex justify-center items-center transition disabled:opacity-50 ">
+          <button
+            type="submit"
+            disabled={sending}
+            className="bg-primary  text-white rounded-full p-3 flex justify-center items-center transition disabled:opacity-50 "
+          >
             <Send size={18} />
           </button>
         </form>
@@ -314,4 +392,3 @@ export default function ModuleChat() {
     </div>
   );
 }
-

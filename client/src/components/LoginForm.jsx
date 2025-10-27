@@ -1,5 +1,3 @@
-import React from "react";
-import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 
 const LoginForm = ({
@@ -17,15 +15,19 @@ const LoginForm = ({
   const navigate = useNavigate();
 
   return (
-    <StyledWrapper>
-      <div className="form-container">
-        <div className="logo-container">{title}</div>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-2">
+      <div className="w-full max-w-md bg-white p-6 sm:p-8 font-inter text-sm text-gray-900 flex flex-col gap-5 box-border rounded-xl shadow-lg">
+        <div className="text-center font-bold text-lg text-gray-900">
+          {title}
+        </div>
 
-        <form className="form" onSubmit={onSubmit}>
+        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
           {step === "email" ? (
             <>
-              <div className="form-group">
-                <label htmlFor="email">University Email</label>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="email" className="font-medium text-gray-700">
+                  University Email
+                </label>
                 <input
                   type="email"
                   id="email"
@@ -34,10 +36,11 @@ const LoginForm = ({
                   value={email}
                   onChange={onEmailChange}
                   required
+                  className="w-full p-3 rounded-lg border border-gray-300 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <button
-                className="form-submit-btn"
+                className="bg-primary text-white w-full p-3 rounded-lg font-medium transition hover:bg-primary/90"
                 type="submit"
                 disabled={loading}
               >
@@ -46,8 +49,10 @@ const LoginForm = ({
             </>
           ) : (
             <>
-              <div className="form-group">
-                <label htmlFor="otp">Enter OTP</label>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="otp" className="font-medium text-gray-700">
+                  Enter OTP
+                </label>
                 <input
                   type="text"
                   id="otp"
@@ -56,10 +61,11 @@ const LoginForm = ({
                   value={otp}
                   onChange={onOtpChange}
                   required
+                  className="w-full p-3 rounded-lg border border-gray-300 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <button
-                className="form-submit-btn"
+                className="bg-primary text-white w-full p-3 rounded-lg font-medium transition hover:bg-primary/90"
                 type="submit"
                 disabled={loading}
               >
@@ -68,7 +74,7 @@ const LoginForm = ({
               <button
                 type="button"
                 onClick={onSwitch}
-                className="link resend-btn hover:cursor-pointer"
+                className="text-primary text-sm bg-none border-none mt-1 hover:underline"
               >
                 🔁 Resend OTP
               </button>
@@ -76,123 +82,19 @@ const LoginForm = ({
           )}
         </form>
 
-        {message && <p className="signup-link">{message}</p>}
+        {message && (
+          <p className="text-center text-xs text-gray-500">{message}</p>
+        )}
 
-        <button className="home-btn" onClick={() => navigate("/")}>
+        <button
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition hover:bg-blue-400"
+          onClick={() => navigate("/")}
+        >
           🏠 Go to Home
         </button>
       </div>
-    </StyledWrapper>
+    </div>
   );
 };
-
-const StyledWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: #f3f4f6;
-
-  .form-container {
-    width: 100%;
-    max-width: 400px;
-    background-color: #fff;
-    padding: 32px 24px;
-    font-size: 14px;
-    font-family: inherit;
-    color: #212121;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    box-sizing: border-box;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  }
-
-  .logo-container {
-    text-align: center;
-    font-weight: 700;
-    font-size: 18px;
-    color: #111;
-  }
-
-  .form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .form-group label {
-    font-weight: 500;
-    color: #333;
-  }
-
-  .form-group input {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    box-sizing: border-box;
-    outline: none;
-  }
-
-  .form-group input:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-  }
-
-  .form-submit-btn {
-    background-color: #111;
-    color: #fff;
-    border: none;
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: 0.2s ease;
-  }
-
-  .form-submit-btn:hover {
-    background-color: #222;
-  }
-
-  .resend-btn {
-    text-align: center;
-    color: #2563eb;
-    font-size: 14px;
-    background: none;
-    border: none;
-    margin-top: 4px;
-  }
-
-  .signup-link {
-    text-align: center;
-    font-size: 13px;
-    color: #555;
-  }
-
-  .home-btn {
-    background-color: #2563eb;
-    color: white;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: 0.2s ease;
-  }
-
-  .home-btn:hover {
-    background-color: #1e40af;
-  }
-`;
 
 export default LoginForm;

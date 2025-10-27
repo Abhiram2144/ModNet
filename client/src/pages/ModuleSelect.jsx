@@ -62,133 +62,134 @@ const ModulesSelect = () => {
   };
 
   const handleSubmit = async () => {
-  if (!selectedCourse || selectedModules.length === 0) {
-    alert("Please select a course and at least one module.");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    // Step 1: Get logged-in Supabase Auth user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error("Authentication error. Please log in again.");
+    if (!selectedCourse || selectedModules.length === 0) {
+      alert("Please select a course and at least one module.");
+      return;
     }
 
-    // Step 2: Find or create the student record
-    // Preferred lookup: students.userid (auth user id). Some onboarding flows create a stub
-    // student row earlier (by email) and may not have set userid yet. Handle both cases:
-    //  - try by userid
-    //  - if not found, try by email and attach userid to that row
-    //  - if still not found, create a new students row with userid+email
-    let userRecord = null;
+    setLoading(true);
 
-    // Try lookup by auth userid first
-    const { data: byId, error: byIdErr } = await supabase
-      .from("students")
-      .select("id")
-      .eq("userid", user.id)
-      .maybeSingle();
-
-    if (byIdErr) throw byIdErr;
-    if (byId) userRecord = byId;
-
-    // Fallback: try lookup by email (onboarding may have created a stub row)
-    if (!userRecord) {
-      const { data: byEmail, error: byEmailErr } = await supabase
-        .from("students")
-        .select("id")
-        .eq("email", user.email)
-        .maybeSingle();
-
-      if (byEmailErr) throw byEmailErr;
-
-      if (byEmail) {
-        // Attach auth userid to the existing student row so future lookups by userid work
-        const { error: attachErr } = await supabase
-          .from("students")
-          .update({ userid: user.id })
-          .eq("id", byEmail.id);
-        if (attachErr) throw attachErr;
-        userRecord = { id: byEmail.id };
-      }
-    }
-
-    // If still not found, create a new student record
-    if (!userRecord) {
-      const displayname = user.user_metadata?.name || user.email?.split("@")[0] || "New User";
-      const { data: newRow, error: insertErr } = await supabase
-        .from("students")
-        .insert({ userid: user.id, email: user.email, displayname })
-        .select("id")
-        .maybeSingle();
-
-      if (insertErr) throw insertErr;
-      userRecord = newRow;
-    }
-
-    // Step 3: Update selected course
-    const { error: updateError } = await supabase
-      .from("students")
-      .update({
-        courseid: selectedCourse,
-      })
-      .eq("id", userRecord.id);
-
-    if (updateError) throw updateError;
-
-    // Step 4: Insert user_modules entries
-    const userModules = selectedModules.map((modId) => ({
-      userid: userRecord.id, // int8 id from your user table
-      moduleid: modId,
-    }));
-
-    const { error: insertError } = await supabase
-      .from("user_modules")
-      .insert(userModules);
-
-    if (insertError) throw insertError;
-
-    // Update AuthContext so other pages (like Home) see the new modules immediately
     try {
-      const formatted = modules.filter((m) => selectedModules.includes(m.id));
-      if (setUserModules) setUserModules(formatted);
-      if (setProfile) {
-        setProfile((p) => ({ ...(p || {}), courseid: selectedCourse }));
+      // Step 1: Get logged-in Supabase Auth user
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error("Authentication error. Please log in again.");
       }
+
+      // Step 2: Find or create the student record
+      // Preferred lookup: students.userid (auth user id). Some onboarding flows create a stub
+      // student row earlier (by email) and may not have set userid yet. Handle both cases:
+      //  - try by userid
+      //  - if not found, try by email and attach userid to that row
+      //  - if still not found, create a new students row with userid+email
+      let userRecord = null;
+
+      // Try lookup by auth userid first
+      const { data: byId, error: byIdErr } = await supabase
+        .from("students")
+        .select("id")
+        .eq("userid", user.id)
+        .maybeSingle();
+
+      if (byIdErr) throw byIdErr;
+      if (byId) userRecord = byId;
+
+      // Fallback: try lookup by email (onboarding may have created a stub row)
+      if (!userRecord) {
+        const { data: byEmail, error: byEmailErr } = await supabase
+          .from("students")
+          .select("id")
+          .eq("email", user.email)
+          .maybeSingle();
+
+        if (byEmailErr) throw byEmailErr;
+
+        if (byEmail) {
+          // Attach auth userid to the existing student row so future lookups by userid work
+          const { error: attachErr } = await supabase
+            .from("students")
+            .update({ userid: user.id })
+            .eq("id", byEmail.id);
+          if (attachErr) throw attachErr;
+          userRecord = { id: byEmail.id };
+        }
+      }
+
+      // If still not found, create a new student record
+      if (!userRecord) {
+        const displayname =
+          user.user_metadata?.name || user.email?.split("@")[0] || "New User";
+        const { data: newRow, error: insertErr } = await supabase
+          .from("students")
+          .insert({ userid: user.id, email: user.email, displayname })
+          .select("id")
+          .maybeSingle();
+
+        if (insertErr) throw insertErr;
+        userRecord = newRow;
+      }
+
+      // Step 3: Update selected course
+      const { error: updateError } = await supabase
+        .from("students")
+        .update({
+          courseid: selectedCourse,
+        })
+        .eq("id", userRecord.id);
+
+      if (updateError) throw updateError;
+
+      // Step 4: Insert user_modules entries
+      const userModules = selectedModules.map((modId) => ({
+        userid: userRecord.id, // int8 id from your user table
+        moduleid: modId,
+      }));
+
+      const { error: insertError } = await supabase
+        .from("user_modules")
+        .insert(userModules);
+
+      if (insertError) throw insertError;
+
+      // Update AuthContext so other pages (like Home) see the new modules immediately
+      try {
+        const formatted = modules.filter((m) => selectedModules.includes(m.id));
+        if (setUserModules) setUserModules(formatted);
+        if (setProfile) {
+          setProfile((p) => ({ ...(p || {}), courseid: selectedCourse }));
+        }
+      } catch (err) {
+        console.warn("Failed to update auth context after module save:", err);
+      }
+
+      alert("✅ Modules saved successfully!");
+      navigate("/home");
     } catch (err) {
-      console.warn("Failed to update auth context after module save:", err);
+      console.error("❌ Error saving module selections:", err);
+      alert(
+        `Something went wrong while saving your preferences: ${err.message}`
+      );
+    } finally {
+      setLoading(false);
     }
-
-    alert("✅ Modules saved successfully!");
-    navigate("/home");
-  } catch (err) {
-    console.error("❌ Error saving module selections:", err);
-    alert(`Something went wrong while saving your preferences: ${err.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white px-4">
-      <div className="bg-neutral-900 w-full max-w-sm p-8 rounded-2xl shadow-md border border-gray-700">
+    <div className="min-h-screen flex items-center justify-center   px-4 font-inter ">
+      <div className=" w-full max-w-sm p-8 rounded-2xl shadow-md  bg-white ">
         <h1 className="text-2xl font-serif font-semibold text-center mb-6">
           Select Your Course & Modules
         </h1>
 
         {/* Course Dropdown */}
-        <div className="mb-5">
+        <div className="mb-5 ">
           <label className="block text-sm font-medium mb-1">Course</label>
           <select
-            className="w-full bg-neutral-800 border border-gray-600 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+            className="w-full border border-gray-600 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
           >
@@ -208,7 +209,7 @@ const ModulesSelect = () => {
               Modules (Select up to 4)
             </label>
             <select
-              className="w-full bg-neutral-800 border border-gray-600 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+              className="w-full  border border-gray-600 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
               onChange={handleModuleSelect}
               value=""
             >
@@ -227,7 +228,7 @@ const ModulesSelect = () => {
                 return (
                   <div
                     key={modId}
-                    className="flex items-center bg-gray-700 text-white px-3 py-1 rounded-full text-xs"
+                    className="flex items-center bg-[#DEE7E7] rounded-md   px-3 py-1  text-sm font-medium "
                   >
                     <span>{mod?.name || "Unknown module"}</span>
                     <button
@@ -244,7 +245,7 @@ const ModulesSelect = () => {
           </div>
         )}
 
-        <p className="text-xs text-center text-red-400 mb-4">
+        <p className="text-xs text-center text-red-400 mb-4 font-bold">
           You can’t change these later *
         </p>
 
@@ -254,7 +255,7 @@ const ModulesSelect = () => {
           className={`w-full py-2 rounded-md text-white text-sm font-medium transition-all ${
             loading
               ? "bg-gray-600 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-500 to-purple-500 text-black hover:bg-white"
+              : "bg-primary text-black cursor-pointer hover:bg-red-700"
           }`}
         >
           {loading ? "Saving..." : "Submit"}

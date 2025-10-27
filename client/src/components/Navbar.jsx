@@ -27,13 +27,17 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-[#FAFAFA] border-b px-2 border-gray-300 shadow-sm min-h-[50px]  flex justify-between items-center z-50">
+    <nav className="fixed top-0 left-0 w-full bg-[#FAFAFA]  px-2  shadow-sm min-h-[50px]  flex justify-between items-center z-50">
       {/* Logo Section */}
       <Link
         to="/home"
         className="flex items-center gap-2 hover:opacity-90 transition"
       >
-        <img src={logo} alt="ModNet Logo" className="w-12 h-12 object-contain" />
+        <img
+          src={logo}
+          alt="ModNet Logo"
+          className="w-12 h-12 object-contain"
+        />
         {/* <span className="text-xl font-bold text-gray-800">ModNet</span> */}
       </Link>
 
@@ -41,14 +45,14 @@ export default function Navbar() {
       <div className="flex items-center space-x-4 ">
         {user ? (
           <button
-            className="bg-amber-200 p-2 rounded-md flex items-center gap-2 hover:cursor-pointer"
+            className="  p-2 rounded-md flex items-center gap-2 hover:cursor-pointer"
             onClick={handleLogout}
           >
-            <LogOut size={18} className="text-gray-700" />
+            Logout <LogOut size={18} className="text-gray-700" />
           </button>
         ) : (
           <button
-            className="bg-amber-200 p-2 rounded-md hover:cursor-pointer"
+            className=" p-2 rounded-md hover:cursor-pointer"
             onClick={() => {
               navigate("/login");
             }}
