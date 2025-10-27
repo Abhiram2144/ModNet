@@ -27,32 +27,32 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-[#FAFAFA]  px-2  shadow-sm min-h-[50px]  flex justify-between items-center z-50">
+    <nav className="fixed top-0 left-0 z-50 flex min-h-[50px] w-full items-center justify-between bg-[#FAFAFA] px-2 shadow-sm">
       {/* Logo Section */}
       <Link
         to="/home"
-        className="flex items-center gap-2 hover:opacity-90 transition"
+        className="flex items-center gap-2 transition hover:opacity-90"
       >
         <img
           src={logo}
           alt="ModNet Logo"
-          className="w-12 h-12 object-contain"
+          className="h-12 w-12 object-contain"
         />
         {/* <span className="text-xl font-bold text-gray-800">ModNet</span> */}
       </Link>
 
       {/* Navigation Links + Auth Buttons */}
-      <div className="flex items-center space-x-4 ">
+      <div className="flex items-center space-x-4">
         {user ? (
           <button
-            className="  p-2 rounded-md flex items-center gap-2 hover:cursor-pointer"
+            className="flex items-center gap-2 rounded-md p-2 hover:cursor-pointer"
             onClick={handleLogout}
           >
             Logout <LogOut size={18} className="text-gray-700" />
           </button>
         ) : (
           <button
-            className=" p-2 rounded-md hover:cursor-pointer"
+            className="rounded-md p-2 hover:cursor-pointer"
             onClick={() => {
               navigate("/login");
             }}

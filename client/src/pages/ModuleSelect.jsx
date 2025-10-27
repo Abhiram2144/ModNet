@@ -171,7 +171,7 @@ const ModulesSelect = () => {
     } catch (err) {
       console.error("❌ Error saving module selections:", err);
       alert(
-        `Something went wrong while saving your preferences: ${err.message}`
+        `Something went wrong while saving your preferences: ${err.message}`,
       );
     } finally {
       setLoading(false);
@@ -179,17 +179,17 @@ const ModulesSelect = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center   px-4 font-inter ">
-      <div className=" w-full max-w-sm p-8 rounded-2xl shadow-md  bg-white ">
-        <h1 className="text-2xl font-serif font-semibold text-center mb-6">
+    <div className="font-inter flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-md">
+        <h1 className="mb-6 text-center font-serif text-2xl font-semibold">
           Select Your Course & Modules
         </h1>
 
         {/* Course Dropdown */}
-        <div className="mb-5 ">
-          <label className="block text-sm font-medium mb-1">Course</label>
+        <div className="mb-5">
+          <label className="mb-1 block text-sm font-medium">Course</label>
           <select
-            className="w-full border border-gray-600 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+            className="w-full rounded-md border border-gray-600 p-2 text-sm focus:ring-1 focus:ring-gray-400 focus:outline-none"
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
           >
@@ -205,11 +205,11 @@ const ModulesSelect = () => {
         {/* Modules Dropdown */}
         {modules.length > 0 && (
           <div className="mb-5">
-            <label className="block text-sm font-medium mb-1">
+            <label className="mb-1 block text-sm font-medium">
               Modules (Select up to 4)
             </label>
             <select
-              className="w-full  border border-gray-600 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+              className="w-full rounded-md border border-gray-600 p-2 text-sm focus:ring-1 focus:ring-gray-400 focus:outline-none"
               onChange={handleModuleSelect}
               value=""
             >
@@ -222,13 +222,13 @@ const ModulesSelect = () => {
             </select>
 
             {/* Selected Modules */}
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="mt-3 flex flex-wrap gap-2">
               {selectedModules.map((modId) => {
                 const mod = modules.find((m) => m.id === modId);
                 return (
                   <div
                     key={modId}
-                    className="flex items-center bg-[#DEE7E7] rounded-md   px-3 py-1  text-sm font-medium "
+                    className="flex items-center rounded-md bg-[#DEE7E7] px-3 py-1 text-sm font-medium"
                   >
                     <span>{mod?.name || "Unknown module"}</span>
                     <button
@@ -245,17 +245,17 @@ const ModulesSelect = () => {
           </div>
         )}
 
-        <p className="text-xs text-center text-red-400 mb-4 font-bold">
+        <p className="mb-4 text-center text-xs font-bold text-red-400">
           You can’t change these later *
         </p>
 
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className={`w-full py-2 rounded-md text-white text-sm font-medium transition-all ${
+          className={`w-full rounded-md py-2 text-sm font-medium text-white transition-all ${
             loading
-              ? "bg-gray-600 cursor-not-allowed"
-              : "bg-primary text-black cursor-pointer hover:bg-red-700"
+              ? "cursor-not-allowed bg-gray-600"
+              : "bg-primary cursor-pointer text-black hover:bg-red-700"
           }`}
         >
           {loading ? "Saving..." : "Submit"}

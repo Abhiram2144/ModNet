@@ -6,10 +6,19 @@ const Modal = ({ PFPS = [], onClose, onConfirm, updating }) => {
 
   return (
     <StyledWrapper>
-      <div className="card" role="dialog" aria-modal="true" aria-label="Choose profile picture">
+      <div
+        className="card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Choose profile picture"
+      >
         <div className="header">
           <h2 className="title">Choose Profile Picture</h2>
-          <button className="closeBtn" onClick={onClose} aria-label="Close modal">
+          <button
+            className="closeBtn"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
             ×
           </button>
         </div>
@@ -17,7 +26,11 @@ const Modal = ({ PFPS = [], onClose, onConfirm, updating }) => {
         <div className="previewArea">
           {selectedPfp ? (
             <>
-              <img src={selectedPfp} alt="Selected pfp" className="previewImg" />
+              <img
+                src={selectedPfp}
+                alt="Selected pfp"
+                className="previewImg"
+              />
               <div className="previewLabel">Selected</div>
             </>
           ) : (
@@ -38,7 +51,12 @@ const Modal = ({ PFPS = [], onClose, onConfirm, updating }) => {
                   if (e.key === "Enter" || e.key === " ") setSelectedPfp(url);
                 }}
               >
-                <img src={url} alt={`pfp-${index}`} className="pfp" loading="lazy" />
+                <img
+                  src={url}
+                  alt={`pfp-${index}`}
+                  className="pfp"
+                  loading="lazy"
+                />
                 <span className="check" aria-hidden>
                   ✓
                 </span>
@@ -98,7 +116,9 @@ const StyledWrapper = styled.div`
     padding: 6px;
     border-radius: 8px;
   }
-  .closeBtn:hover { background: rgba(255,255,255,0.03); }
+  .closeBtn:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
 
   .title {
     font-size: 1.15rem;
@@ -109,9 +129,9 @@ const StyledWrapper = styled.div`
 
   .previewArea {
     width: 100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 6px 0 8px;
     min-height: 72px;
   }
@@ -121,13 +141,20 @@ const StyledWrapper = styled.div`
     height: 84px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid rgba(255,255,255,0.06);
-    box-shadow: 0 8px 22px rgba(0,0,0,0.5);
+    border: 3px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
   }
 
-  .previewLabel { font-size: 12px; color: #aaa; margin-left:10px; }
+  .previewLabel {
+    font-size: 12px;
+    color: #aaa;
+    margin-left: 10px;
+  }
 
-  .previewPlaceholder { color: #999; font-size: 13px; }
+  .previewPlaceholder {
+    color: #999;
+    font-size: 13px;
+  }
 
   .gridWrapper {
     width: 100%;
@@ -174,12 +201,20 @@ const StyledWrapper = styled.div`
     .imageGrid {
       grid-template-columns: repeat(3, 1fr); /* >=640px: 3 columns */
     }
-    .previewImg { width: 96px; height: 96px; }
+    .previewImg {
+      width: 96px;
+      height: 96px;
+    }
   }
 
   @media (min-width: 1024px) {
-    .pfp { width: 160px; height: 160px; }
-    .card { max-width: 760px; }
+    .pfp {
+      width: 160px;
+      height: 160px;
+    }
+    .card {
+      max-width: 760px;
+    }
   }
 
   /* Mobile: limit visible rows to ~5 rows and make rest scrollable */
@@ -198,7 +233,9 @@ const StyledWrapper = styled.div`
     justify-content: center;
     outline: none;
     border-radius: 50%;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
   }
 
   .pfpWrap:focus {
@@ -208,7 +245,7 @@ const StyledWrapper = styled.div`
   .pfpWrap.selected .pfp {
     transform: scale(1.08);
     border-color: #f3f4f6; /* lighter ring */
-    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
   }
 
   .check {
@@ -225,7 +262,7 @@ const StyledWrapper = styled.div`
     justify-content: center;
     font-weight: 700;
     font-size: 14px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   }
 
   .pfpWrap.selected .check {

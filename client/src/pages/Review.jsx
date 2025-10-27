@@ -83,7 +83,10 @@ const ReviewPage = () => {
           });
         }
       } catch (err) {
-        console.warn("Failed to update preloaded profile:", err?.message || err);
+        console.warn(
+          "Failed to update preloaded profile:",
+          err?.message || err,
+        );
       }
     } catch (err) {
       console.error("❌ Error submitting review:", err.message);
@@ -95,15 +98,15 @@ const ReviewPage = () => {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center h-screen text-gray-400">
-        <Loader2 className="animate-spin w-6 h-6 mr-2" />
+      <div className="flex h-screen items-center justify-center text-gray-400">
+        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
         Loading...
       </div>
     );
 
   if (!userData)
     return (
-      <div className="flex items-center justify-center h-screen text-gray-600 bg-white">
+      <div className="flex h-screen items-center justify-center bg-white text-gray-600">
         Unable to load user data.
       </div>
     );
@@ -113,81 +116,81 @@ const ReviewPage = () => {
 
   return (
     <div className="font-inter">
-      <Navbar/>
-  <div className="min-h-screen bg-[#F2EFE8] text-black flex flex-col items-center px-4 pt-16 pb-10 font-inter">
-      <div className="w-full max-w-lg bg-white rounded-2xl p-6 border border-gray-200 shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">
-          Share Your Feedback
-        </h1>
+      <Navbar />
+      <div className="font-inter flex min-h-screen flex-col items-center bg-[#F2EFE8] px-4 pt-16 pb-10 text-black">
+        <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-md">
+          <h1 className="mb-6 text-center text-2xl font-bold">
+            Share Your Feedback
+          </h1>
 
-  {(userData.canreview === false || submitted) ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <h2 className="text-2xl font-semibold mb-3">Thank You!</h2>
-            <p className="text-gray-600 max-w-md text-center">
-              {submitted
-                ? "Thanks — your feedback has been submitted. Your input helps ModNet become a better platform."
-                : "You've already submitted your feedback. Your input helps ModNet evolve into a better platform."}
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          {/* STAR RATING */}
-          <div className="flex flex-col items-center">
-            <label className="text-sm text-gray-600 mb-3">
-              How was your experience?
-            </label>
-            <div className="flex space-x-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  onClick={() => setReview(star)}
-                  onMouseEnter={() => setHover(star)}
-                  onMouseLeave={() => setHover(0)}
-                  className={`w-8 h-8 cursor-pointer transition-transform duration-150 ${
-                    star <= (hover || review)
-                      ? "text-yellow-400 scale-110"
-                      : "text-gray-300"
-                  }`}
-                  fill={star <= (hover || review) ? "#facc15" : "none"}
-                />
-              ))}
+          {userData.canreview === false || submitted ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <h2 className="mb-3 text-2xl font-semibold">Thank You!</h2>
+              <p className="max-w-md text-center text-gray-600">
+                {submitted
+                  ? "Thanks — your feedback has been submitted. Your input helps ModNet become a better platform."
+                  : "You've already submitted your feedback. Your input helps ModNet evolve into a better platform."}
+              </p>
             </div>
-            <p className="text-gray-600 text-sm mt-2">
-              {review === 0
-                ? "Tap a star to rate"
-                : `You rated ${review} star${review > 1 ? "s" : ""}`}
-            </p>
-          </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+              {/* STAR RATING */}
+              <div className="flex flex-col items-center">
+                <label className="mb-3 text-sm text-gray-600">
+                  How was your experience?
+                </label>
+                <div className="flex space-x-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      onClick={() => setReview(star)}
+                      onMouseEnter={() => setHover(star)}
+                      onMouseLeave={() => setHover(0)}
+                      className={`h-8 w-8 cursor-pointer transition-transform duration-150 ${
+                        star <= (hover || review)
+                          ? "scale-110 text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                      fill={star <= (hover || review) ? "#facc15" : "none"}
+                    />
+                  ))}
+                </div>
+                <p className="mt-2 text-sm text-gray-600">
+                  {review === 0
+                    ? "Tap a star to rate"
+                    : `You rated ${review} star${review > 1 ? "s" : ""}`}
+                </p>
+              </div>
 
-          {/* SUGGESTION FIELD */}
-          <div>
-            <label className="text-sm text-gray-600 mb-2 block">
-              Any suggestions for improvement? (Optional)
-            </label>
-            <textarea
-              value={suggestion}
-              onChange={(e) => setSuggestion(e.target.value)}
-              placeholder="How can we make ModNet better?"
-              className="w-full h-24 bg-gray-100 border border-gray-300 rounded-xl p-3 text-sm text-gray-800 resize-none focus:outline-none focus:border-gray-500"
-            />
-          </div>
+              {/* SUGGESTION FIELD */}
+              <div>
+                <label className="mb-2 block text-sm text-gray-600">
+                  Any suggestions for improvement? (Optional)
+                </label>
+                <textarea
+                  value={suggestion}
+                  onChange={(e) => setSuggestion(e.target.value)}
+                  placeholder="How can we make ModNet better?"
+                  className="h-24 w-full resize-none rounded-xl border border-gray-300 bg-gray-100 p-3 text-sm text-gray-800 focus:border-gray-500 focus:outline-none"
+                />
+              </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className={`mt-4 w-full py-3 rounded-xl text-sm font-semibold transition-all ${
-              submitting
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-black text-white hover:bg-gray-800"
-            }`}
-          >
-            {submitting ? "Submitting..." : "Submit Review"}
-          </button>
-        </form>
-        )}
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`mt-4 w-full rounded-xl py-3 text-sm font-semibold transition-all ${
+                  submitting
+                    ? "cursor-not-allowed bg-gray-300 text-gray-500"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
+              >
+                {submitting ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
+          )}
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
     </div>
   );
 };

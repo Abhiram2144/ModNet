@@ -111,7 +111,12 @@ const Login = () => {
         const { data: insertedStudent } = await supabase
           .from("students")
           .insert([
-            { email, displayname: displayName, userid: authUser.id, created_at: new Date() },
+            {
+              email,
+              displayname: displayName,
+              userid: authUser.id,
+              created_at: new Date(),
+            },
           ])
           .select()
           .single();
@@ -136,7 +141,7 @@ const Login = () => {
 
   if (showLoader) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#FAFAFA]">
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFA]">
         <Loader />
       </div>
     );

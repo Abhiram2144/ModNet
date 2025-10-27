@@ -47,7 +47,7 @@ export default function ModuleChat() {
           // Check access via preloaded userModules if available
           if (userModules) {
             const has = userModules.some(
-              (m) => String(m.id) === String(moduleId)
+              (m) => String(m.id) === String(moduleId),
             );
             setAllowed(Boolean(has));
           } else {
@@ -110,7 +110,7 @@ export default function ModuleChat() {
             `
             id, created_at, content, attachment_url, attachment_name, userid,
             students:userid (displayname, profileimage)
-          `
+          `,
           )
           .eq("moduleid", moduleId)
           .order("created_at", { ascending: true });
@@ -134,7 +134,7 @@ export default function ModuleChat() {
                 if (prev.some((m) => m.id === payload.new.id)) return prev;
                 return [...prev, payload.new];
               });
-            }
+            },
           )
           .subscribe();
 
@@ -202,7 +202,7 @@ export default function ModuleChat() {
         .from("messages")
         .insert([payload])
         .select(
-          `id, created_at, content, attachment_url, attachment_name, userid, students:userid (displayname, profileimage)`
+          `id, created_at, content, attachment_url, attachment_name, userid, students:userid (displayname, profileimage)`,
         )
         .maybeSingle();
 
@@ -227,7 +227,7 @@ export default function ModuleChat() {
 
   if (allowed === null) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-500 bg-gray-100">
+      <div className="flex h-screen items-center justify-center bg-gray-100 text-gray-500">
         Checking access…
       </div>
     );
@@ -235,14 +235,14 @@ export default function ModuleChat() {
 
   if (!allowed) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-100 text-gray-900 text-center px-6">
-        <h2 className="text-2xl font-semibold mb-2">Access Denied 🚫</h2>
-        <p className="text-gray-600 mb-6 max-w-sm">
+      <div className="flex h-screen flex-col items-center justify-center bg-gray-100 px-6 text-center text-gray-900">
+        <h2 className="mb-2 text-2xl font-semibold">Access Denied 🚫</h2>
+        <p className="mb-6 max-w-sm text-gray-600">
           You don't have access to this module's chat.
         </p>
         <button
           onClick={() => navigate("/home")}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-full transition"
+          className="rounded-full bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-500"
         >
           Go Back Home
         </button>
@@ -251,24 +251,24 @@ export default function ModuleChat() {
   }
 
   return (
-    <div className="flex flex-col h-screen  text-gray-900 font-inter  ">
+    <div className="font-inter flex h-screen flex-col text-gray-900">
       {/* Header */}
-      <div className="flex items-center px-4 py-3   shadow-sm h-16 ">
+      <div className="flex h-16 items-center px-4 py-3 shadow-sm">
         <button
           onClick={() => navigate("/home")}
-          className="hover:cursor-pointer text-gray-500 hover:text-gray-700 mr-3"
+          className="mr-3 text-gray-500 hover:cursor-pointer hover:text-gray-700"
         >
           <ArrowLeft size={22} />
         </button>
-        <h1 className="text-lg font-semibold truncate">
+        <h1 className="truncate text-lg font-semibold">
           {moduleInfo?.name ? moduleInfo.name : `Module ${moduleId}`}
         </h1>
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-150px)] bg-gray-50 scrollbar-thin scrollbar-thumb-gray-300">
+      <div className="scrollbar-thin scrollbar-thumb-gray-300 max-h-[calc(100vh-150px)] flex-1 space-y-4 overflow-y-auto bg-gray-50 p-4">
         {messages.length === 0 ? (
-          <p className="text-gray-500 text-center mt-10">
+          <p className="mt-10 text-center text-gray-500">
             Start the conversation 💬
           </p>
         ) : (
@@ -286,34 +286,34 @@ export default function ModuleChat() {
                     <img
                       src={msg.students.profileimage}
                       alt=""
-                      className="w-9 h-9 rounded-full mr-2 border border-gray-300"
+                      className="mr-2 h-9 w-9 rounded-full border border-gray-300"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-full mr-2 border border-gray-300 bg-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg">
+                    <div className="mr-2 flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-gray-300 text-lg font-bold text-gray-700">
                       {(msg.students?.displayname || "U")[0].toUpperCase()}
                     </div>
                   ))}
                 <div
-                  className={`max-w-[70%] px-4 py-2 rounded-2xl shadow-sm  ${
+                  className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${
                     mine
-                      ? "bg-blue-600 text-white rounded-br-none"
-                      : "bg-gray-200 text-gray-800 rounded-bl-none"
+                      ? "rounded-br-none bg-blue-600 text-white"
+                      : "rounded-bl-none bg-gray-200 text-gray-800"
                   }`}
                 >
                   {!mine && (
-                    <span className="block text-xs text-gray-500 mb-1 ">
+                    <span className="mb-1 block text-xs text-gray-500">
                       {msg.students?.displayname || "User"}
                     </span>
                   )}
                   {msg.content && (
-                    <p className="text-sm  font-medium ">{msg.content}</p>
+                    <p className="text-sm font-medium">{msg.content}</p>
                   )}
                   {msg.attachment_url && (
                     <a
                       href={msg.attachment_url}
                       target="_blank"
                       rel="noreferrer"
-                      className={`block mt-1 text-xs underline ${
+                      className={`mt-1 block text-xs underline ${
                         mine ? "text-blue-100" : "text-blue-600"
                       }`}
                     >
@@ -322,7 +322,7 @@ export default function ModuleChat() {
                   )}
 
                   <span
-                    className={`block text-[10px] mt-1 ${
+                    className={`mt-1 block text-[10px] ${
                       mine ? "text-blue-100" : "text-gray-500"
                     } text-right`}
                   >
@@ -340,10 +340,10 @@ export default function ModuleChat() {
                     <img
                       src={student.profileimage}
                       alt=""
-                      className="w-9 h-9 rounded-full ml-2 border border-gray-300"
+                      className="ml-2 h-9 w-9 rounded-full border border-gray-300"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-full ml-2 border border-gray-300 bg-gray-300 flex items-center justify-center text-gray-700 font-bold text-lg">
+                    <div className="ml-2 flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-gray-300 text-lg font-bold text-gray-700">
                       {(student?.displayname || "U")[0].toUpperCase()}
                     </div>
                   ))}
@@ -353,12 +353,12 @@ export default function ModuleChat() {
         )}
         <div ref={messagesEndRef}></div>
       </div>
-      <div className="p-4 flex items-center w-full justify-between  h-max bg-gray-100">
+      <div className="flex h-max w-full items-center justify-between bg-gray-100 p-4">
         {/* Input Bar */}
 
         <form
           onSubmit={handleSend}
-          className="flex items-center justify-around space-x-4  w-full h-full "
+          className="flex h-full w-full items-center justify-around space-x-4"
         >
           <label
             htmlFor="file-input"
@@ -377,13 +377,13 @@ export default function ModuleChat() {
             placeholder="Type a message..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="p-2 rounded-full bg-white border border-gray-300 w-[calc(80%-2rem)] focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-[calc(80%-2rem)] rounded-full border border-gray-300 bg-white p-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
           />
 
           <button
             type="submit"
             disabled={sending}
-            className="bg-primary  text-white rounded-full p-3 flex justify-center items-center transition disabled:opacity-50 "
+            className="bg-primary flex items-center justify-center rounded-full p-3 text-white transition disabled:opacity-50"
           >
             <Send size={18} />
           </button>

@@ -8,11 +8,11 @@ export default function LandingPage() {
   return (
     <>
       <Navbar />
-      <div className="flex flex-col items-center justify-center h-screen overflow-hidden pt-0 text-black  bg-[#F2EFE8] px-6 sm:px-10 text-center font-inter">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold mb-4 tracking-tight">
+      <div className="font-inter flex h-screen flex-col items-center justify-center overflow-hidden bg-[#F2EFE8] px-6 pt-0 text-center text-black sm:px-10">
+        <h1 className="mb-4 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
           ModNet
         </h1>
-        <p className="text-base sm:text-lg text-gray-700 max-w-xs sm:max-w-md leading-relaxed mb-8">
+        <p className="mb-8 max-w-xs text-base leading-relaxed text-gray-700 sm:max-w-md sm:text-lg">
           Join real-time discussion channels with classmates studying the same
           modules — exchange ideas, notes, and motivation.
         </p>
