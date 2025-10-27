@@ -95,7 +95,7 @@ const AccountPage = () => {
 
   return (
     <div>
-      <div className="min-h-screen   bg-white text-black font-inter flex flex-col items-center px-6 pt-24 pb-10">
+  <div className="min-h-screen bg-[#F2EFE8] text-black font-inter flex flex-col items-center px-6 pt-24 pb-10">
         <Navbar />
         {/* Profile Section */}
         <div className="flex flex-col items-center text-center">

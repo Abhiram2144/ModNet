@@ -9,7 +9,7 @@ const ReviewPage = () => {
   const [userData, setUserData] = useState(null);
   const [review, setReview] = useState(0);
   const [suggestion, setSuggestion] = useState("");
-  const { profile } = useAuth();
+  const { profile, setProfile } = useAuth();
   // avoid showing the loader if profile was preloaded
   const [loading, setLoading] = useState(!profile);
   const [submitting, setSubmitting] = useState(false);
@@ -71,7 +71,20 @@ const ReviewPage = () => {
 
       if (error) throw error;
 
+      // update preloaded profile so other pages see the change immediately
       setSubmitted(true);
+      try {
+        if (setProfile) {
+          setProfile({
+            ...userData,
+            canreview: false,
+            review: review,
+            suggestion: suggestion,
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to update preloaded profile:", err?.message || err);
+      }
     } catch (err) {
       console.error("❌ Error submitting review:", err.message);
       alert("Failed to submit review.");
@@ -101,13 +114,13 @@ const ReviewPage = () => {
   return (
     <div className="font-inter">
       <Navbar/>
-  <div className="min-h-screen bg-white text-black flex flex-col items-center px-4 pt-16 pb-10 font-inter">
+  <div className="min-h-screen bg-[#F2EFE8] text-black flex flex-col items-center px-4 pt-16 pb-10 font-inter">
       <div className="w-full max-w-lg bg-white rounded-2xl p-6 border border-gray-200 shadow-md">
         <h1 className="text-2xl font-bold mb-6 text-center">
           Share Your Feedback
         </h1>
 
-        {(!userData.canreview || submitted) ? (
+  {(userData.canreview === false || submitted) ? (
           <div className="flex flex-col items-center justify-center py-12">
             <h2 className="text-2xl font-semibold mb-3">Thank You!</h2>
             <p className="text-gray-600 max-w-md text-center">
