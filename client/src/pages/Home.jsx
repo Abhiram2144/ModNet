@@ -99,6 +99,16 @@ export default function Home() {
       <div className="min-h-screen bg-[#F2EFE8] text-black  flex flex-col pt-16 pb-20 px-4">
         <div className="max-w-md mx-auto w-full flex flex-col items-center">
           <h1 className="text-2xl font-semibold mb-6">Welcome <span className="font-bold text-yellow-500">{username}</span></h1>
+          {/* MVP notice */}
+          <div className="w-full mb-4">
+            <div
+              role="status"
+              className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 px-4 py-3 rounded-md text-sm"
+            >
+              <strong className="font-semibold">MVP v1</strong>
+              <span className="ml-2">— You're using the first version of ModNet. Expect small issues and frequent updates. Share feedback via Account → Review.</span>
+            </div>
+          </div>
 
           {/* Dynamic Module Grid */}
           <ModuleContainer modules={modules} />
