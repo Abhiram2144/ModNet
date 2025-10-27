@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { X } from "lucide-react";
 
 const ModulesSelect = () => {
@@ -10,6 +11,7 @@ const ModulesSelect = () => {
   const [selectedModules, setSelectedModules] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUserModules, setProfile } = useAuth();
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -152,6 +154,17 @@ const ModulesSelect = () => {
 
     if (insertError) throw insertError;
 
+    // Update AuthContext so other pages (like Home) see the new modules immediately
+    try {
+      const formatted = modules.filter((m) => selectedModules.includes(m.id));
+      if (setUserModules) setUserModules(formatted);
+      if (setProfile) {
+        setProfile((p) => ({ ...(p || {}), courseid: selectedCourse }));
+      }
+    } catch (err) {
+      console.warn("Failed to update auth context after module save:", err);
+    }
+
     alert("✅ Modules saved successfully!");
     navigate("/home");
   } catch (err) {
@@ -241,7 +254,7 @@ const ModulesSelect = () => {
           className={`w-full py-2 rounded-md text-white text-sm font-medium transition-all ${
             loading
               ? "bg-gray-600 cursor-not-allowed"
-              : "bg-gray-200 text-black hover:bg-white"
+              : "bg-gradient-to-r from-blue-500 to-purple-500 text-black hover:bg-white"
           }`}
         >
           {loading ? "Saving..." : "Submit"}

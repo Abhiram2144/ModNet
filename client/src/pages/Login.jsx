@@ -27,21 +27,13 @@ const Login = () => {
     }
 
     try {
-      const dummyPassword = Math.random().toString(36).slice(-10);
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password: dummyPassword,
-      });
-
-      if (signUpError && !signUpError.message.includes("already registered")) {
-        setMessage(`❌ Error creating account: ${signUpError.message}`);
-        setLoading(false);
-        return;
-      }
-
+      // Use signInWithOtp directly — let Supabase create the user if needed.
+      // Creating a user manually via signUp before sending OTP can cause unexpected
+      // auth state changes or redirects in some setups. signInWithOtp will create
+      // the user when `shouldCreateUser` is true (default) and send the OTP.
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: false },
+        options: { shouldCreateUser: true },
       });
 
       if (error) {
