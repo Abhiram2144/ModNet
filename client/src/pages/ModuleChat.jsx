@@ -35,7 +35,7 @@ export default function ModuleChat() {
       try {
         // If profile preloaded, use it
         if (profile) {
-          setStudent({ id: profile.id, displayname: profile.displayname, profileimage: profile.profileimage });
+          setStudent({ id: profile.id, authid: profile.userid, displayname: profile.displayname, profileimage: profile.profileimage });
 
           // Check access via preloaded userModules if available
           if (userModules) {
@@ -60,7 +60,7 @@ export default function ModuleChat() {
             .maybeSingle();
 
           if (studentError || !studentData) throw new Error("Student not found");
-          setStudent(studentData);
+          setStudent({ ...studentData, authid: user.id });
 
           const { data: access, error: accessError } = await supabase
             .from("user_modules")
@@ -118,7 +118,11 @@ export default function ModuleChat() {
               filter: `moduleid=eq.${moduleId}`,
             },
             (payload) => {
-              setMessages((prev) => [...prev, payload.new]);
+                setMessages((prev) => {
+                  // avoid duplicates if the message is already present (e.g., inserted locally)
+                  if (prev.some((m) => m.id === payload.new.id)) return prev;
+                  return [...prev, payload.new];
+                });
             }
           )
           .subscribe();
@@ -170,20 +174,31 @@ export default function ModuleChat() {
         attachmentName = file.name;
       }
 
-      // Insert message
-      const { error: insertError } = await supabase.from("messages").insert([
-        {
-          moduleid: moduleId,
-          userid: student.id,
-          content,
-          attachment_url: attachmentUrl,
-          attachment_name: attachmentName,
-        },
-      ]);
+      // Insert message and return the inserted row so we can render it immediately
+      const payload = {
+        moduleid: moduleId,
+        // messages.userid must reference students.id (the students PK).
+        // Prefer the student's `id` (uuid) — not the Supabase auth id.
+        userid: student?.id,
+        content,
+        attachment_url: attachmentUrl,
+        attachment_name: attachmentName,
+      };
+
+      const { data: insertedMsg, error: insertError } = await supabase
+        .from("messages")
+        .insert([payload])
+        .select(
+          `id, created_at, content, attachment_url, attachment_name, userid, students:userid (displayname, profileimage)`
+        )
+        .maybeSingle();
 
       if (insertError) {
         console.error("Insert error:", insertError.message);
         alert("Error sending message: " + insertError.message);
+      } else if (insertedMsg) {
+        // append the inserted message immediately (avoid waiting for realtime)
+        setMessages((prev) => [...prev, insertedMsg]);
       }
 
       setContent("");
@@ -224,7 +239,7 @@ export default function ModuleChat() {
     <div className="flex flex-col h-screen  text-gray-900 font-inter  ">
       {/* Header */}
       <div className="flex items-center px-4 py-3 border-b bg-gray-100  shadow-sm">
-        <button onClick={() => navigate("/home") } className="text-gray-500 hover:text-gray-700 mr-3">
+        <button onClick={() => navigate("/home") } className="hover:cursor-pointer text-gray-500 hover:text-gray-700 mr-3">
           <ArrowLeft size={22} />
         </button>
         <h1 className="text-lg font-semibold">{moduleInfo?.name ? moduleInfo.name : `Module ${moduleId}`}</h1>
