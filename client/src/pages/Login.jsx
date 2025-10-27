@@ -54,6 +54,9 @@ const Login = () => {
     setLoading(true);
     setMessage("");
 
+    // show loader immediately so users don't see the email input flash
+    setShowLoader(true);
+
     const { error } = await supabase.auth.verifyOtp({
       email,
       token: otp,
@@ -62,6 +65,7 @@ const Login = () => {
 
     if (error) {
       setMessage("❌ Invalid or expired OTP.");
+      setShowLoader(false);
       setLoading(false);
       return;
     }
@@ -93,8 +97,7 @@ const Login = () => {
 
     await preloadPages();
 
-    // Simulate 2-second loading animation
-    setTimeout(async () => {
+    try {
       const { data: existingStudent } = await supabase
         .from("students")
         .select("*")
@@ -123,10 +126,12 @@ const Login = () => {
 
       if (!studentModules || studentModules.length === 0) navigate("/modules");
       else navigate("/home");
-
+    } catch (err) {
+      console.warn("Login post-checks failed:", err);
+    } finally {
       setShowLoader(false);
       setLoading(false);
-    }, 2000);
+    }
   };
 
   if (showLoader) {
