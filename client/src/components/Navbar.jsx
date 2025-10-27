@@ -41,14 +41,14 @@ export default function Navbar() {
       <div className="flex items-center space-x-4 ">
         {user ? (
           <button
-            className="bg-amber-200 p-2 rounded-md flex items-center gap-2"
+            className="bg-amber-200 p-2 rounded-md flex items-center gap-2 hover:cursor-pointer"
             onClick={handleLogout}
           >
             <LogOut size={18} className="text-gray-700" />
           </button>
         ) : (
           <button
-            className="bg-amber-200 p-2 rounded-md"
+            className="bg-amber-200 p-2 rounded-md hover:cursor-pointer"
             onClick={() => {
               navigate("/login");
             }}
