@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
-import { ArrowLeft, Send, Paperclip } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Loader2 } from "lucide-react";
 
 export default function ModuleChat() {
   const { moduleId } = useParams();
@@ -14,6 +14,7 @@ export default function ModuleChat() {
   const [moduleInfo, setModuleInfo] = useState(null);
   const [content, setContent] = useState("");
   const [file, setFile] = useState(null);
+  const [fileError, setFileError] = useState("");
   const [sending, setSending] = useState(false);
   // If userModules are preloaded we can determine access synchronously
   const initialAllowed = userModules
@@ -128,13 +129,64 @@ export default function ModuleChat() {
               table: "messages",
               filter: `moduleid=eq.${moduleId}`,
             },
-            (payload) => {
+            async (payload) => {
+              const newRow = payload.new;
+
+              // If the realtime payload already contains joined students info, use it.
+              if (newRow.students && (newRow.students.displayname || newRow.students.profileimage)) {
+                setMessages((prev) => {
+                  if (prev.some((m) => m.id === newRow.id)) return prev;
+                  return [...prev, newRow];
+                });
+                return;
+              }
+
+              // Otherwise, try to fetch the full message row (with joined students) by id.
+              try {
+                const { data: fullMsg, error: fullErr } = await supabase
+                  .from("messages")
+                  .select(
+                    `id, created_at, content, attachment_url, attachment_name, userid, students:userid (displayname, profileimage)`
+                  )
+                  .eq("id", newRow.id)
+                  .maybeSingle();
+
+                if (fullErr) throw fullErr;
+                if (fullMsg) {
+                  setMessages((prev) => {
+                    if (prev.some((m) => m.id === fullMsg.id)) return prev;
+                    return [...prev, fullMsg];
+                  });
+                  return;
+                }
+              } catch (err) {
+                console.warn("Failed to fetch full message for realtime insert:", err?.message || err);
+              }
+
+              // Fallback: try to fetch the student row and attach it to the payload
+              try {
+                const { data: studentRow } = await supabase
+                  .from("students")
+                  .select("displayname, profileimage")
+                  .eq("id", newRow.userid)
+                  .maybeSingle();
+
+                const enriched = { ...newRow, students: studentRow || null };
+                setMessages((prev) => {
+                  if (prev.some((m) => m.id === enriched.id)) return prev;
+                  return [...prev, enriched];
+                });
+                return;
+              } catch (err) {
+                console.warn("Failed to fetch student for realtime message:", err?.message || err);
+              }
+
+              // As a last resort, append the raw payload (deduped)
               setMessages((prev) => {
-                // avoid duplicates if the message is already present (e.g., inserted locally)
-                if (prev.some((m) => m.id === payload.new.id)) return prev;
-                return [...prev, payload.new];
+                if (prev.some((m) => m.id === newRow.id)) return prev;
+                return [...prev, newRow];
               });
-            },
+            }
           )
           .subscribe();
 
@@ -356,37 +408,77 @@ export default function ModuleChat() {
       <div className="flex h-max w-full items-center justify-between bg-gray-100 p-4">
         {/* Input Bar */}
 
-        <form
-          onSubmit={handleSend}
-          className="flex h-full w-full items-center justify-around space-x-4"
-        >
-          <label
-            htmlFor="file-input"
-            className="cursor-pointer text-gray-500 hover:text-gray-700"
-          >
-            <Paperclip size={20} />
-            <input
-              id="file-input"
-              type="file"
-              className="hidden"
-              onChange={(e) => setFile(e.target.files[0])}
-            />
-          </label>
-          <input
-            type="text"
-            placeholder="Type a message..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-[calc(80%-2rem)] rounded-full border border-gray-300 bg-white p-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          />
+        <form onSubmit={handleSend} className="flex w-full flex-col space-y-2">
+          {/* Selected file preview / full-width chip above the input so it doesn't shrink the text field */}
+          {file && (
+            <div className="flex w-full flex-col space-y-1">
+              <div className="flex items-center justify-between w-full rounded-lg bg-white px-3 py-2 border border-gray-300">
+                <div className="flex items-center space-x-3">
+                  <Paperclip size={16} className="text-gray-600" />
+                  <div className="text-sm font-medium text-gray-800 truncate max-w-[60vw]">
+                    {file.name}
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                  <button
+                    type="button"
+                    onClick={() => { setFile(null); setFileError(""); }}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                    aria-label="Remove attached file"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              {fileError && (
+                <div className="text-sm text-red-600">{fileError}</div>
+              )}
+            </div>
+          )}
 
-          <button
-            type="submit"
-            disabled={sending}
-            className="bg-primary flex items-center justify-center rounded-full p-3 text-white transition disabled:opacity-50"
-          >
-            <Send size={18} />
-          </button>
+          <div className="flex w-full items-center space-x-3">
+            <label
+              htmlFor="file-input"
+              className={`cursor-pointer text-gray-500 hover:text-gray-700 ${sending ? "pointer-events-none opacity-50" : ""}`}
+              title={file ? "Remove current file to attach a new one" : "Attach a file"}
+            >
+              <Paperclip size={20} />
+              <input
+                id="file-input"
+                type="file"
+                className="hidden"
+                onChange={(e) => {
+                  // Only accept one file at a time. If one is already present, show an error message.
+                  if (!e.target.files || e.target.files.length === 0) return;
+                  if (file) {
+                    setFileError("Only one file can be attached at a time. Remove the current file to attach another.");
+                    setTimeout(() => setFileError(""), 3500);
+                    // reset input value so selecting the same file again triggers change next time
+                    e.target.value = null;
+                    return;
+                  }
+                  setFile(e.target.files[0]);
+                }}
+              />
+            </label>
+
+            <input
+              type="text"
+              placeholder="Type a message..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="flex-1 rounded-full border border-gray-300 bg-white p-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            />
+
+            <button
+              type="submit"
+              disabled={sending}
+              className="bg-primary flex items-center justify-center rounded-full p-3 text-white transition disabled:opacity-50"
+            >
+              {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+            </button>
+          </div>
         </form>
       </div>
     </div>
