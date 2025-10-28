@@ -20,11 +20,14 @@ const Login = () => {
     setLoading(true);
     setMessage("");
 
-    if (!email.endsWith("@student.le.ac.uk")) {
-      setMessage("❌ Please use your university email address.");
+    // Accept a username and append the university domain.
+    const username = email.trim();
+    if (!username) {
+      setMessage("❌ Please enter your university username.");
       setLoading(false);
       return;
     }
+    const fullEmail = `${username}@student.le.ac.uk`;
 
     try {
       // Use signInWithOtp directly — let Supabase create the user if needed.
@@ -32,7 +35,7 @@ const Login = () => {
       // auth state changes or redirects in some setups. signInWithOtp will create
       // the user when `shouldCreateUser` is true (default) and send the OTP.
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: fullEmail,
         options: { shouldCreateUser: true },
       });
 
@@ -41,6 +44,8 @@ const Login = () => {
       } else {
         setMessage("✅ OTP sent to your university email.");
         setStep("verify");
+        // store the full email for verification step
+        setEmail(fullEmail);
       }
     } catch (err) {
       setMessage(`⚠️ Unexpected error: ${err.message}`);

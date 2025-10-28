@@ -52,12 +52,12 @@ export default function Navbar() {
           </button>
         ) : (
           <button
-            className="rounded-md p-2 hover:cursor-pointer"
+            className="flex items-center gap-2 rounded-md p-2 hover:cursor-pointer"
             onClick={() => {
               navigate("/login");
             }}
           >
-            <LogIn size={18} className="text-gray-700" />
+            Log In <LogIn size={18} className="text-gray-700" />
           </button>
         )}
       </div>

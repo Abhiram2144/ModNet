@@ -25,14 +25,14 @@ const LoginForm = ({
           {step === "email" ? (
             <>
               <div className="flex flex-col gap-2">
-                <label htmlFor="email" className="font-medium text-gray-700">
-                  University Email
+                <label htmlFor="username" className="font-medium text-gray-700">
+                  University username
                 </label>
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  placeholder="Enter your @student.le.ac.uk email"
+                  type="text"
+                  id="username"
+                  name="username"
+                  placeholder="Enter your university username (e.g. abc123)"
                   value={email}
                   onChange={onEmailChange}
                   required
@@ -87,7 +87,7 @@ const LoginForm = ({
         )}
 
         <button
-          className="rounded-lg bg-blue-500 px-4 py-2 font-medium text-white transition hover:bg-blue-400"
+          className="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white transition hover:bg-gray-700"
           onClick={() => navigate("/")}
         >
           🏠 Go to Home
