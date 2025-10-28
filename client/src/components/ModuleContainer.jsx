@@ -15,17 +15,17 @@ const Button = ({ modules }) => {
             key={mod.id}
             className={`card${
               idx + 1
-            } bg-white flex h-[4rem] w-full rounded-md p-4 font-medium justify-start items-center shadow-md hover:shadow-lg hover:cursor-pointer transition`}
+            } flex min-h-16 w-full items-center justify-start rounded-md bg-white p-4 text-left font-medium shadow-md transition hover:cursor-pointer hover:shadow-lg`}
             onClick={() => navigate(`/chat/${mod.id}`)}
           >
-            <span className="module-name" title={mod.name}>
+            <span className="module-name text-ellipsis" title={mod.name}>
               {mod.name}
             </span>
             <span className="ml-auto flex items-center">
               <ArrowRight size={20} className="text-gray-500" />
             </span>
           </button>
-        ) : null
+        ) : null,
       )}
     </div>
   );

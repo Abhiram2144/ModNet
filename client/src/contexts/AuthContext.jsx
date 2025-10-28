@@ -19,21 +19,23 @@ export const AuthProvider = ({ children }) => {
       setLoading(false); // ✅ done loading
     };
 
-  checkSession();
+    checkSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user || null;
-      setUser(currentUser);
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        const currentUser = session?.user || null;
+        setUser(currentUser);
 
-      // When a user signs in, preload their profile and modules for the session
-      if (currentUser) {
-        preloadUserData(currentUser);
-      } else {
-        // cleared session -> reset preloaded data
-        setProfile(null);
-        setUserModules(null);
-      }
-    });
+        // When a user signs in, preload their profile and modules for the session
+        if (currentUser) {
+          preloadUserData(currentUser);
+        } else {
+          // cleared session -> reset preloaded data
+          setProfile(null);
+          setUserModules(null);
+        }
+      },
+    );
 
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -47,7 +49,9 @@ export const AuthProvider = ({ children }) => {
       // Fetch student record
       const { data: dbUser, error: userErr } = await supabase
         .from("students")
-        .select("id, displayname, email, profileimage, canreview, review, suggestion, courseid, userid")
+        .select(
+          "id, displayname, email, profileimage, canreview, review, suggestion, courseid, userid",
+        )
         .eq("userid", authUser.id)
         .maybeSingle();
 
@@ -57,9 +61,7 @@ export const AuthProvider = ({ children }) => {
       // Fetch user modules with module details
       const { data: moduleData, error: modErr } = await supabase
         .from("user_modules")
-        .select(
-          `moduleid, modules:moduleid (id, name, code)`
-        )
+        .select(`moduleid, modules:moduleid (id, name, code)`)
         .eq("userid", dbUser?.id);
 
       if (modErr) {
@@ -83,7 +85,7 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex h-screen items-center justify-center">
         Loading authentication...
       </div>
     );

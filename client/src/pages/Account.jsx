@@ -87,15 +87,15 @@ const AccountPage = () => {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center h-screen text-gray-400">
-        <Loader2 className="animate-spin w-6 h-6 mr-2" />
+      <div className="flex h-screen items-center justify-center text-gray-400">
+        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
         Loading profile...
       </div>
     );
 
   return (
     <div>
-  <div className="min-h-screen bg-[#F2EFE8] text-black font-inter flex flex-col items-center px-6 pt-24 pb-10">
+      <div className="font-inter flex min-h-screen flex-col items-center bg-[#F2EFE8] px-6 pt-24 pb-10 text-black">
         <Navbar />
         {/* Profile Section */}
         <div className="flex flex-col items-center text-center">
@@ -104,16 +104,16 @@ const AccountPage = () => {
               <img
                 src={userData.profileimage}
                 alt="Profile"
-                className="w-20 h-20 rounded-full object-cover"
+                className="h-20 w-20 rounded-full object-cover"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-amber-200 flex items-center justify-center text-3xl font-bold text-gray-700">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-200 text-3xl font-bold text-gray-700">
                 {userData?.displayname?.charAt(0)?.toUpperCase() || "?"}
               </div>
             )}
             <button
               onClick={() => setIsModalOpen(true)}
-              className="absolute bottom-0 right-0 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700 transition-all"
+              className="absolute right-0 bottom-0 rounded-full bg-gray-800 p-2 text-white transition-all hover:bg-gray-700"
             >
               <FaEdit size={12} />
             </button>
@@ -122,14 +122,14 @@ const AccountPage = () => {
           <h2 className="mt-4 text-xl font-semibold">
             {userData?.displayname}
           </h2>
-          <p className="text-gray-400 text-sm">{userData?.email}</p>
+          <p className="text-sm text-gray-400">{userData?.email}</p>
         </div>
 
         {/* Info Section (Boxed layout) */}
-        <div className="w-full max-w-md mt-8 space-y-5">
+        <div className="mt-8 w-full max-w-md space-y-5">
           {/* Course Info */}
-          <div className="bg-white rounded-2xl px-6 py-5 border border-gray-200">
-            <h3 className="text-center text-sm text-gray-500 uppercase mb-2 tracking-wide">
+          <div className="rounded-2xl border border-gray-200 bg-white px-6 py-5">
+            <h3 className="mb-2 text-center text-sm tracking-wide text-gray-500 uppercase">
               Course
             </h3>
             <p className="text-center text-base font-medium text-gray-900">
@@ -138,18 +138,18 @@ const AccountPage = () => {
           </div>
 
           {/* Modules Info */}
-          <div className="bg-white rounded-2xl px-6 py-5 border border-gray-200">
-            <h3 className="text-center text-sm text-gray-500 uppercase mb-2 tracking-wide">
+          <div className="rounded-2xl border border-gray-200 bg-white px-6 py-5">
+            <h3 className="mb-2 text-center text-sm tracking-wide text-gray-500 uppercase">
               Modules
             </h3>
             {modules.length > 0 ? (
-              <ul className="text-gray-700 text-sm space-y-1 text-center">
+              <ul className="space-y-1 text-center text-sm text-gray-700">
                 {modules.map((mod, idx) => (
                   <li key={idx}>{mod}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-400 text-sm text-center">
+              <p className="text-center text-sm text-gray-400">
                 No modules selected yet.
               </p>
             )}
@@ -158,7 +158,7 @@ const AccountPage = () => {
 
         {/* Profile Image Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
             <Modal
               PFPS={PFPS}
               onClose={() => setIsModalOpen(false)}
@@ -182,7 +182,10 @@ const AccountPage = () => {
                   }));
                   // update global context so other components reflect the change immediately
                   if (setProfile) {
-                    setProfile((prev) => ({ ...(prev || {}), profileimage: selectedUrl }));
+                    setProfile((prev) => ({
+                      ...(prev || {}),
+                      profileimage: selectedUrl,
+                    }));
                   }
                   setIsModalOpen(false);
                 } catch (err) {

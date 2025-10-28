@@ -27,9 +27,9 @@ function MainLayout() {
   if (preloading) return <Loader />;
 
   return (
-    <div className="min-h-screen bg-[#F2EFE8] text-gray-900 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-[#F2EFE8] text-gray-900">
       {/* {showNavbar && <Navbar />} */}
-      <main className="flex-grow ">
+      <main className="flex-grow">
         {/* Add padding to avoid navbar overlap */}
         <AppRoutes />
       </main>

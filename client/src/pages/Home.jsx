@@ -13,7 +13,7 @@ export default function Home() {
   const { userModules } = useAuth();
   // initialize loading to false if modules were preloaded in AuthContext
   const [loading, setLoading] = useState(!userModules);
-  const username = user.email.split("@")[0]
+  const username = user.email.split("@")[0];
   useEffect(() => {
     if (!user) {
       navigate("/login");
@@ -48,7 +48,7 @@ export default function Home() {
               name,
               code
             )
-          `
+          `,
           )
           .eq("userid", studentData.id);
 
@@ -67,26 +67,25 @@ export default function Home() {
   }, [user, navigate]);
 
   // const handleModuleClick = (moduleId) => navigate(`/chat/${moduleId}`);
-  
-    
+
   if (loading)
     return (
-      <div className="flex items-center justify-center h-screen text-gray-500 ">
-        <Loader2 className="animate-spin w-6 h-6 mr-2" />
+      <div className="flex h-screen items-center justify-center text-gray-500">
+        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
         Loading modules...
       </div>
     );
 
   if (modules.length === 0)
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-[#F2EFE8] text-black px-6 ">
-        <h2 className="text-2xl font-semibold mb-3">No Modules Found</h2>
-        <p className="text-gray-600 text-center max-w-sm mb-6">
+      <div className="flex h-screen flex-col items-center justify-center bg-[#F2EFE8] px-6 text-black">
+        <h2 className="mb-3 text-2xl font-semibold">No Modules Found</h2>
+        <p className="mb-6 max-w-sm text-center text-gray-600">
           You haven't selected any modules yet. Add some to start discussions!
         </p>
         <button
           onClick={() => navigate("/modules")}
-          className="bg-[#6B4F4F] text-white px-6 py-2 rounded-xl font-medium hover:bg-[#553b3b] transition-all"
+          className="rounded-xl bg-[#6B4F4F] px-6 py-2 font-medium text-white transition-all hover:bg-[#553b3b]"
         >
           Add Modules
         </button>
@@ -96,17 +95,23 @@ export default function Home() {
   return (
     <div className="font-inter">
       <Navbar />
-      <div className="min-h-screen bg-[#F2EFE8] text-black  flex flex-col pt-16 pb-20 px-4">
-        <div className="max-w-md mx-auto w-full flex flex-col items-center">
-          <h1 className="text-2xl font-semibold mb-6">Welcome <span className="font-bold text-yellow-500">{username}</span></h1>
+      <div className="flex min-h-screen flex-col bg-[#F2EFE8] px-4 pt-16 pb-20 text-black">
+        <div className="mx-auto flex w-full max-w-md flex-col items-center">
+          <h1 className="mb-6 text-2xl font-semibold">
+            Welcome{" "}
+            <span className="font-bold text-yellow-500">{username}</span>
+          </h1>
           {/* MVP notice */}
-          <div className="w-full mb-4">
+          <div className="mb-4 w-full">
             <div
               role="status"
-              className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 px-4 py-3 rounded-md text-sm"
+              className="rounded-md border-l-4 border-yellow-400 bg-yellow-50 px-4 py-3 text-sm text-yellow-800"
             >
               <strong className="font-semibold">MVP v1</strong>
-              <span className="ml-2">— You're using the first version of ModNet. Expect small issues and frequent updates. Share feedback via Account → Review.</span>
+              <span className="ml-2">
+                — You're using the first version of ModNet. Expect small issues
+                and frequent updates. Share feedback via Account → Review.
+              </span>
             </div>
           </div>
 
