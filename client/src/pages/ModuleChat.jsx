@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
-import { ArrowLeft, Send, Paperclip, Loader2 } from "lucide-react";
+// import { ArrowLeft, Send, Paperclip, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Loader2, CornerUpLeft } from "lucide-react";
 
 export default function ModuleChat() {
   const { moduleId } = useParams();
@@ -15,6 +16,7 @@ export default function ModuleChat() {
   const [content, setContent] = useState("");
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState("");
+  const [replyTarget, setReplyTarget] = useState(null);
   const [sending, setSending] = useState(false);
   // If userModules are preloaded we can determine access synchronously
   const initialAllowed = userModules
@@ -109,7 +111,7 @@ export default function ModuleChat() {
           .from("messages")
           .select(
             `
-            id, created_at, content, attachment_url, attachment_name, userid,
+            id, created_at, content, attachment_url, attachment_name, userid, reply_to_id,
             students:userid (displayname, profileimage)
           `,
           )
@@ -146,7 +148,7 @@ export default function ModuleChat() {
                 const { data: fullMsg, error: fullErr } = await supabase
                   .from("messages")
                   .select(
-                    `id, created_at, content, attachment_url, attachment_name, userid, students:userid (displayname, profileimage)`
+                    `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`
                   )
                   .eq("id", newRow.id)
                   .maybeSingle();
@@ -245,6 +247,7 @@ export default function ModuleChat() {
         // messages.userid must reference students.id (the students PK).
         // Prefer the student's `id` (uuid) — not the Supabase auth id.
         userid: student?.id,
+        reply_to_id: replyTarget?.id || null,
         content,
         attachment_url: attachmentUrl,
         attachment_name: attachmentName,
@@ -254,7 +257,7 @@ export default function ModuleChat() {
         .from("messages")
         .insert([payload])
         .select(
-          `id, created_at, content, attachment_url, attachment_name, userid, students:userid (displayname, profileimage)`,
+          `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
         )
         .maybeSingle();
 
@@ -266,7 +269,8 @@ export default function ModuleChat() {
         setMessages((prev) => [...prev, insertedMsg]);
       }
 
-      setContent("");
+  setContent("");
+  setReplyTarget(null);
       setFile(null);
     } catch (err) {
       console.error("Error:", err.message);
@@ -326,6 +330,7 @@ export default function ModuleChat() {
         ) : (
           messages.map((msg) => {
             const mine = isMyMessage(msg);
+            const parent = msg.reply_to_id ? messages.find((m) => m.id === msg.reply_to_id) : null;
             return (
               <div
                 key={msg.id}
@@ -352,6 +357,21 @@ export default function ModuleChat() {
                       : "rounded-bl-none bg-gray-200 text-gray-800"
                   }`}
                 >
+                  {parent && (
+                    <div className={`mb-2 rounded-lg border ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}>
+                      <div className="text-xs font-semibold text-gray-600">
+                        {parent.students?.displayname || "User"}
+                      </div>
+                      {parent.content && (
+                        <div className="line-clamp-2 text-xs text-gray-700">
+                          {parent.content}
+                        </div>
+                      )}
+                      {!parent.content && parent.attachment_name && (
+                        <div className="text-xs text-gray-700">Attachment: {parent.attachment_name}</div>
+                      )}
+                    </div>
+                  )}
                   {!mine && (
                     <span className="mb-1 block text-xs text-gray-500">
                       {msg.students?.displayname || "User"}
@@ -386,6 +406,16 @@ export default function ModuleChat() {
                         Intl.DateTimeFormat().resolvedOptions().timeZone,
                     })}
                   </span>
+                  <div className={`mt-1 flex ${mine ? "justify-start" : "justify-end"}`}>
+                    <button
+                      type="button"
+                      onClick={() => setReplyTarget(msg)}
+                      className={`group flex items-center space-x-1 text-[11px] ${mine ? "text-blue-100 hover:text-white" : "text-gray-600 hover:text-gray-800"}`}
+                    >
+                      <CornerUpLeft size={14} />
+                      <span>Reply</span>
+                    </button>
+                  </div>
                 </div>
                 {mine &&
                   (student?.profileimage ? (
@@ -408,6 +438,27 @@ export default function ModuleChat() {
       <div className="flex-shrink-0 w-full bg-gray-100 p-4 z-10">
         {/* Input Bar */}
         <form onSubmit={handleSend} className="flex w-full flex-col space-y-2">
+          {replyTarget && (
+            <div className="flex w-full items-start justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
+              <div className="mr-3 min-w-0">
+                <div className="text-xs font-semibold text-gray-700">Replying to {replyTarget.students?.displayname || "User"}</div>
+                {replyTarget.content && (
+                  <div className="line-clamp-2 text-xs text-gray-600 break-words">{replyTarget.content}</div>
+                )}
+                {!replyTarget.content && replyTarget.attachment_name && (
+                  <div className="text-xs text-gray-600">Attachment: {replyTarget.attachment_name}</div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyTarget(null)}
+                className="text-sm text-gray-500 hover:text-gray-700"
+                aria-label="Cancel reply"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {/* Selected file preview / full-width chip above the input so it doesn't shrink the text field */}
           {file && (
             <div className="flex w-full flex-col space-y-1">
