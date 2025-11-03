@@ -24,6 +24,7 @@ export default function ModuleChat() {
     : null;
   const [allowed, setAllowed] = useState(initialAllowed);
   const messagesEndRef = useRef(null);
+  const lastSeenRef = useRef(null); // latest created_at we've seen (for polling fallback)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -120,6 +121,9 @@ export default function ModuleChat() {
 
         if (msgError) throw msgError;
         setMessages(msgs || []);
+        if (msgs && msgs.length > 0) {
+          lastSeenRef.current = msgs[msgs.length - 1].created_at;
+        }
 
         const channel = supabase
           .channel(`chat-${moduleId}`)
@@ -138,7 +142,9 @@ export default function ModuleChat() {
               if (newRow.students && (newRow.students.displayname || newRow.students.profileimage)) {
                 setMessages((prev) => {
                   if (prev.some((m) => m.id === newRow.id)) return prev;
-                  return [...prev, newRow];
+                  const next = [...prev, newRow];
+                  try { lastSeenRef.current = newRow.created_at || lastSeenRef.current; } catch {}
+                  return next;
                 });
                 return;
               }
@@ -157,7 +163,9 @@ export default function ModuleChat() {
                 if (fullMsg) {
                   setMessages((prev) => {
                     if (prev.some((m) => m.id === fullMsg.id)) return prev;
-                    return [...prev, fullMsg];
+                    const next = [...prev, fullMsg];
+                    try { lastSeenRef.current = fullMsg.created_at || lastSeenRef.current; } catch {}
+                    return next;
                   });
                   return;
                 }
@@ -176,7 +184,9 @@ export default function ModuleChat() {
                 const enriched = { ...newRow, students: studentRow || null };
                 setMessages((prev) => {
                   if (prev.some((m) => m.id === enriched.id)) return prev;
-                  return [...prev, enriched];
+                  const next = [...prev, enriched];
+                  try { lastSeenRef.current = enriched.created_at || lastSeenRef.current; } catch {}
+                  return next;
                 });
                 return;
               } catch (err) {
@@ -186,11 +196,17 @@ export default function ModuleChat() {
               // As a last resort, append the raw payload (deduped)
               setMessages((prev) => {
                 if (prev.some((m) => m.id === newRow.id)) return prev;
-                return [...prev, newRow];
+                const next = [...prev, newRow];
+                try { lastSeenRef.current = newRow.created_at || lastSeenRef.current; } catch {}
+                return next;
               });
             }
           )
-          .subscribe();
+          .subscribe((status) => {
+            if (status === "SUBSCRIBED") {
+              // console.debug(`Realtime subscribed to chat-${moduleId}`);
+            }
+          });
 
         return () => supabase.removeChannel(channel);
       } catch (err) {
@@ -201,6 +217,43 @@ export default function ModuleChat() {
 
     fetchStudentAndCheckAccess();
   }, [user, moduleId, navigate, profile, userModules]);
+
+  // Polling fallback: in case Realtime is disabled or blocked by network/policies, fetch new messages periodically
+  useEffect(() => {
+    let timer;
+    if (allowed) {
+      timer = setInterval(async () => {
+        try {
+          const since = lastSeenRef.current;
+          let query = supabase
+            .from("messages")
+            .select(
+              `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`
+            )
+            .eq("moduleid", moduleId)
+            .order("created_at", { ascending: true });
+
+          if (since) {
+            query = query.gt("created_at", since);
+          }
+
+          const { data: newer, error: newerErr } = await query;
+          if (newerErr) return;
+          if (newer && newer.length) {
+            setMessages((prev) => {
+              const have = new Set(prev.map((m) => m.id));
+              const merged = [...prev, ...newer.filter((m) => !have.has(m.id))];
+              try { lastSeenRef.current = merged[merged.length - 1]?.created_at || lastSeenRef.current; } catch {}
+              return merged;
+            });
+          }
+        } catch {}
+      }, 3000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [allowed, moduleId]);
 
   const handleSend = async (e) => {
     e.preventDefault();
