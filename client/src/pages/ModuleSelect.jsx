@@ -49,8 +49,8 @@ const ModulesSelect = () => {
     const modIdNum = Number(moduleid);
 
     if (selectedModules.includes(modIdNum)) return;
-    if (selectedModules.length >= 4) {
-      alert("You can select up to 4 modules only.");
+    if (selectedModules.length !== 4) {
+      alert("You must select exactly 4 modules.");
       return;
     }
 

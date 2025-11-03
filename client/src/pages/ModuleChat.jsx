@@ -303,9 +303,9 @@ export default function ModuleChat() {
   }
 
   return (
-    <div className="font-inter flex h-screen flex-col text-gray-900">
+    <div className="font-inter flex flex-col text-gray-900 h-[100dvh] max-h-[100dvh] overflow-hidden">
       {/* Header */}
-      <div className="flex h-16 items-center px-4 py-3 shadow-sm">
+      <div className="flex items-center px-4 py-3 shadow-sm flex-shrink-0 h-16 min-h-16 max-h-16 bg-white z-10">
         <button
           onClick={() => navigate("/home")}
           className="mr-3 text-gray-500 hover:cursor-pointer hover:text-gray-700"
@@ -318,7 +318,7 @@ export default function ModuleChat() {
       </div>
 
       {/* Chat Area */}
-      <div className="scrollbar-thin scrollbar-thumb-gray-300 max-h-[calc(100vh-150px)] flex-1 space-y-4 overflow-y-auto bg-gray-50 p-4">
+  <div className="scrollbar-thin scrollbar-thumb-gray-300 flex-1 min-h-0 space-y-4 overflow-y-auto bg-gray-50 p-4">
         {messages.length === 0 ? (
           <p className="mt-10 text-center text-gray-500">
             Start the conversation 💬
@@ -405,9 +405,8 @@ export default function ModuleChat() {
         )}
         <div ref={messagesEndRef}></div>
       </div>
-      <div className="flex h-max w-full items-center justify-between bg-gray-100 p-4">
+      <div className="flex-shrink-0 w-full bg-gray-100 p-4 z-10">
         {/* Input Bar */}
-
         <form onSubmit={handleSend} className="flex w-full flex-col space-y-2">
           {/* Selected file preview / full-width chip above the input so it doesn't shrink the text field */}
           {file && (
