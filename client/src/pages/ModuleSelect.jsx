@@ -49,8 +49,8 @@ const ModulesSelect = () => {
     const modIdNum = Number(moduleid);
 
     if (selectedModules.includes(modIdNum)) return;
-    if (selectedModules.length !== 4) {
-      alert("You must select exactly 4 modules.");
+    if (selectedModules.length >= 4) {
+      alert("You can select up to 4 modules only.");
       return;
     }
 
@@ -62,8 +62,8 @@ const ModulesSelect = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedCourse || selectedModules.length === 0) {
-      alert("Please select a course and at least one module.");
+    if (!selectedCourse || selectedModules.length !== 4) {
+      alert("Please select a course and exactly four modules.");
       return;
     }
 
