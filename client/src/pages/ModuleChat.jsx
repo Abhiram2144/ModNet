@@ -3,13 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 // import { ArrowLeft, Send, Paperclip, Loader2 } from "lucide-react";
-import {
-  ArrowLeft,
-  Send,
-  Paperclip,
-  Loader2,
-  CornerUpLeft,
-} from "lucide-react";
+
+import ChatContainer from "../components/ChatContainer";
 
 export default function ModuleChat() {
   const { moduleId } = useParams();
@@ -362,298 +357,37 @@ export default function ModuleChat() {
     }
   };
 
-  const isMyMessage = (msg) => msg.userid === student?.id;
-
-  if (allowed === null) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-100 text-gray-500">
-        Checking access…
-      </div>
-    );
-  }
-
-  if (!allowed) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center bg-gray-100 px-6 text-center text-gray-900">
-        <h2 className="mb-2 text-2xl font-semibold">Access Denied 🚫</h2>
-        <p className="mb-6 max-w-sm text-gray-600">
-          You don't have access to this module's chat.
-        </p>
-        <button
-          onClick={() => navigate("/home")}
-          className="rounded-full bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-500"
-        >
-          Go Back Home
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="font-inter relative flex h-screen max-h-screen flex-col overflow-hidden text-gray-900">
-      {/* Header */}
-      <div className="z-10 flex h-16 max-h-16 min-h-16 shrink-0 items-center bg-white px-4 py-3 shadow-sm">
-        <button
-          onClick={() => navigate("/home")}
-          className="mr-3 text-gray-500 hover:cursor-pointer hover:text-gray-700"
-        >
-          <ArrowLeft size={22} />
-        </button>
-        <h1 className="truncate text-lg font-semibold">
-          {moduleInfo?.name ? moduleInfo.name : `Module ${moduleId}`}
-        </h1>
-      </div>
-
-      {/* Chat Area */}
-      <div className="scrollbar-thin scrollbar-thumb-gray-300 min-h-0 flex-1 space-y-4 overflow-y-auto bg-gray-50 p-4">
-        {messages.length === 0 ? (
-          <p className="mt-10 text-center text-gray-500">
-            Start the conversation 💬
-          </p>
-        ) : (
-          messages.map((msg) => {
-            const mine = isMyMessage(msg);
-            const parent = msg.reply_to_id
-              ? messages.find((m) => m.id === msg.reply_to_id)
-              : null;
-            return (
-              <div
-                key={msg.id}
-                className={`flex items-end ${
-                  mine ? "justify-end" : "justify-start"
-                }`}
-              >
-                {!mine &&
-                  (msg.students?.profileimage ? (
-                    <img
-                      src={msg.students.profileimage}
-                      alt=""
-                      className="mr-2 h-9 w-9 rounded-full border border-gray-300"
-                    />
-                  ) : (
-                    <div className="mr-2 flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-gray-300 text-lg font-bold text-gray-700">
-                      {(msg.students?.displayname || "U")[0].toUpperCase()}
-                    </div>
-                  ))}
-                <div
-                  className={`max-w-[70%] overflow-hidden rounded-2xl px-4 py-2 wrap-break-word shadow-sm ${
-                    mine
-                      ? "rounded-br-none bg-blue-600 text-white"
-                      : "rounded-bl-none bg-gray-200 text-gray-800"
-                  }`}
-                  style={{ wordBreak: "break-word", whiteSpace: "pre-line" }}
-                >
-                  {parent && (
-                    <div
-                      className={`mb-2 rounded-lg border bg-gray-200 ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}
-                    >
-                      <div className="text-xs font-semibold text-gray-600">
-                        {parent.students?.displayname || "User"}
-                      </div>
-                      {parent.content && (
-                        <div className="line-clamp-2 text-xs text-gray-700">
-                          {parent.content}
-                        </div>
-                      )}
-                      {!parent.content && parent.attachment_name && (
-                        <div className="text-xs text-ellipsis text-gray-700">
-                          Attachment: {parent.attachment_name}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {!mine && (
-                    <span className="mb-1 block text-xs text-gray-500">
-                      {msg.students?.displayname || "User"}
-                    </span>
-                  )}
-                  {msg.content && (
-                    <p className="text-sm font-medium wrap-break-word whitespace-pre-line">
-                      {msg.content}
-                    </p>
-                  )}
-                  {msg.attachment_url && (
-                    <a
-                      href={msg.attachment_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={`mt-1 block text-xs underline ${
-                        mine ? "text-blue-100" : "text-blue-600"
-                      } max-w-[180px] truncate wrap-break-word`}
-                      title={msg.attachment_name || msg.attachment_url}
-                    >
-                      {msg.attachment_name
-                        ? msg.attachment_name
-                        : msg.attachment_url.length > 32
-                          ? msg.attachment_url.slice(0, 29) + "..."
-                          : msg.attachment_url}
-                    </a>
-                  )}
-
-                  <span
-                    className={`mt-1 block text-[10px] ${
-                      mine ? "text-blue-100" : "text-gray-500"
-                    } text-right`}
-                  >
-                    {new Date(msg.created_at).toLocaleTimeString("en-GB", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                      timeZone:
-                        Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    })}
-                  </span>
-                  <div
-                    className={`mt-1 flex ${mine ? "justify-start" : "justify-end"}`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setReplyTarget(msg)}
-                      className={`group flex items-center space-x-1 text-[11px] ${mine ? "text-blue-100 hover:text-white" : "text-gray-600 hover:text-gray-800"}`}
-                    >
-                      <CornerUpLeft size={14} />
-                      <span>Reply</span>
-                    </button>
-                  </div>
-                </div>
-                {mine &&
-                  (student?.profileimage ? (
-                    <img
-                      src={student.profileimage}
-                      alt=""
-                      className="ml-2 h-9 w-9 rounded-full border border-gray-300"
-                    />
-                  ) : (
-                    <div className="ml-2 flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-gray-300 text-lg font-bold text-gray-700">
-                      {(student?.displayname || "U")[0].toUpperCase()}
-                    </div>
-                  ))}
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef}></div>
-        {/* Placeholder height to prevent messages from being hidden */}
-        <div className="h-20"></div>
-      </div>
-      {/* Sticky Input Bar */}
-      <div className="absolute bottom-0 left-0 z-20 w-full bg-gray-100 p-4">
-        {/* Input Bar */}
-        <form onSubmit={handleSend} className="flex w-full flex-col space-y-2">
-          {replyTarget && (
-            <div className="flex w-full items-start justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
-              <div className="mr-3 min-w-0">
-                <div className="text-xs font-semibold text-gray-700">
-                  Replying to {replyTarget.students?.displayname || "User"}
-                </div>
-                {replyTarget.content && (
-                  <div className="line-clamp-2 text-xs wrap-break-word text-gray-600">
-                    {replyTarget.content}
-                  </div>
-                )}
-                {!replyTarget.content && replyTarget.attachment_name && (
-                  <div className="text-xs text-gray-600">
-                    Attachment: {replyTarget.attachment_name}
-                  </div>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setReplyTarget(null)}
-                className="text-sm text-gray-500 hover:text-gray-700"
-                aria-label="Cancel reply"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-          {/* Selected file preview / full-width chip above the input so it doesn't shrink the text field */}
-          {file && (
-            <div className="flex w-full flex-col space-y-1">
-              <div className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
-                <div className="flex items-center space-x-3">
-                  <Paperclip size={16} className="text-gray-600" />
-                  <div className="max-w-[60vw] truncate text-sm font-medium text-gray-800">
-                    {file.name}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs text-gray-500">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFile(null);
-                      setFileError("");
-                    }}
-                    className="text-sm text-gray-500 hover:text-gray-700"
-                    aria-label="Remove attached file"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-              {fileError && (
-                <div className="text-sm text-red-600">{fileError}</div>
-              )}
-            </div>
-          )}
-
-          <div className="flex w-full items-center space-x-3">
-            <label
-              htmlFor="file-input"
-              className={`cursor-pointer text-gray-500 hover:text-gray-700 ${sending ? "pointer-events-none opacity-50" : ""}`}
-              title={
-                file
-                  ? "Remove current file to attach a new one"
-                  : "Attach a file"
-              }
-            >
-              <Paperclip size={20} />
-              <input
-                id="file-input"
-                type="file"
-                className="hidden"
-                onChange={(e) => {
-                  // Only accept one file at a time. If one is already present, show an error message.
-                  if (!e.target.files || e.target.files.length === 0) return;
-                  if (file) {
-                    setFileError(
-                      "Only one file can be attached at a time. Remove the current file to attach another.",
-                    );
-                    setTimeout(() => setFileError(""), 3500);
-                    // reset input value so selecting the same file again triggers change next time
-                    e.target.value = null;
-                    return;
-                  }
-                  setFile(e.target.files[0]);
-                }}
-              />
-            </label>
-
-            <input
-              type="text"
-              placeholder="Type a message..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="flex-1 rounded-full border border-gray-300 bg-white p-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            />
-
-            <button
-              type="submit"
-              disabled={sending}
-              className="bg-primary flex items-center justify-center rounded-full p-3 text-white transition disabled:opacity-50"
-            >
-              {sending ? (
-                <Loader2 className="animate-spin" size={18} />
-              ) : (
-                <Send size={18} />
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <ChatContainer
+      chatType="module"
+      chatId={moduleId}
+      user={user}
+      profile={profile}
+      student={student}
+      allowed={allowed}
+      setAllowed={setAllowed}
+      chatInfo={moduleInfo}
+      setChatInfo={setModuleInfo}
+      messages={messages}
+      setMessages={setMessages}
+      content={content}
+      setContent={setContent}
+      file={file}
+      setFile={setFile}
+      fileError={fileError}
+      setFileError={setFileError}
+      replyTarget={replyTarget}
+      setReplyTarget={setReplyTarget}
+      sending={sending}
+      setSending={setSending}
+      messagesEndRef={messagesEndRef}
+      lastSeenRef={lastSeenRef}
+      handleSend={handleSend}
+      navigate={navigate}
+      headerTitle={moduleInfo?.name ? moduleInfo.name : `Module ${moduleId}`}
+      deniedText={"You don't have access to this module's chat."}
+      deniedButtonText={"Go Back Home"}
+      deniedButtonLink={"/home"}
+    />
   );
 }
