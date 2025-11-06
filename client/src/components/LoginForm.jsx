@@ -34,7 +34,15 @@ const LoginForm = ({
                   name="username"
                   placeholder="Enter your university username (e.g. abc123)"
                   value={email}
-                  onChange={onEmailChange}
+                  onChange={(e) =>
+                    onEmailChange({
+                      ...e,
+                      target: {
+                        ...e.target,
+                        value: e.target.value.toLowerCase(),
+                      },
+                    })
+                  }
                   required
                   className="focus:border-primary focus:ring-primary/20 w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:ring-2"
                 />
@@ -59,7 +67,15 @@ const LoginForm = ({
                   name="otp"
                   placeholder="Enter your OTP"
                   value={otp}
-                  onChange={onOtpChange}
+                  onChange={(e) =>
+                    onOtpChange({
+                      ...e,
+                      target: {
+                        ...e.target,
+                        value: e.target.value.toLowerCase(),
+                      },
+                    })
+                  }
                   required
                   className="focus:border-primary focus:ring-primary/20 w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:ring-2"
                 />

@@ -390,7 +390,7 @@ export default function ModuleChat() {
   }
 
   return (
-    <div className="font-inter flex h-svh max-h-svh flex-col overflow-hidden text-gray-900">
+    <div className="font-inter relative flex h-screen max-h-screen flex-col overflow-hidden text-gray-900">
       {/* Header */}
       <div className="z-10 flex h-16 max-h-16 min-h-16 shrink-0 items-center bg-white px-4 py-3 shadow-sm">
         <button
@@ -436,7 +436,7 @@ export default function ModuleChat() {
                     </div>
                   ))}
                 <div
-                  className={`max-w-[70%] overflow-hidden rounded-2xl px-4 py-2 break-words shadow-sm ${
+                  className={`max-w-[70%] overflow-hidden rounded-2xl px-4 py-2 wrap-break-word shadow-sm ${
                     mine
                       ? "rounded-br-none bg-blue-600 text-white"
                       : "rounded-bl-none bg-gray-200 text-gray-800"
@@ -468,7 +468,7 @@ export default function ModuleChat() {
                     </span>
                   )}
                   {msg.content && (
-                    <p className="text-sm font-medium break-words whitespace-pre-line">
+                    <p className="text-sm font-medium wrap-break-word whitespace-pre-line">
                       {msg.content}
                     </p>
                   )}
@@ -479,7 +479,7 @@ export default function ModuleChat() {
                       rel="noreferrer"
                       className={`mt-1 block text-xs underline ${
                         mine ? "text-blue-100" : "text-blue-600"
-                      } max-w-[180px] truncate break-words`}
+                      } max-w-[180px] truncate wrap-break-word`}
                       title={msg.attachment_name || msg.attachment_url}
                     >
                       {msg.attachment_name
@@ -534,7 +534,8 @@ export default function ModuleChat() {
         )}
         <div ref={messagesEndRef}></div>
       </div>
-      <div className="z-10 w-full flex-shrink-0 bg-gray-100 p-4">
+      {/* Sticky Input Bar */}
+      <div className="absolute bottom-0 left-0 z-20 w-full bg-gray-100 p-4">
         {/* Input Bar */}
         <form onSubmit={handleSend} className="flex w-full flex-col space-y-2">
           {replyTarget && (
@@ -544,7 +545,7 @@ export default function ModuleChat() {
                   Replying to {replyTarget.students?.displayname || "User"}
                 </div>
                 {replyTarget.content && (
-                  <div className="line-clamp-2 text-xs break-words text-gray-600">
+                  <div className="line-clamp-2 text-xs wrap-break-word text-gray-600">
                     {replyTarget.content}
                   </div>
                 )}
