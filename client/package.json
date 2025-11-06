@@ -9,8 +9,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "prettier-watch": "onchange \"**/*\" -- prettier --write --ignore-unknown {{changed}}",
-    "prepare": "husky install"
+    "prettier-watch": "onchange \"**/*\" -- prettier --write --ignore-unknown {{changed}}"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -42,9 +41,5 @@
     "tailwindcss": "^4.1.16",
     "vite": "^7.1.7",
     "vite-plugin-pwa": "^1.0.3"
-  },
-  "lint-staged": {
-    "*.js": "eslint --cache --fix",
-    "*.{js,css,md}": "prettier --write"
   }
 }
