@@ -312,7 +312,7 @@ export default function GroupChat() {
   }
 
   return (
-    <div className="font-inter flex h-svh max-h-svh flex-col overflow-hidden text-gray-900">
+    <div className="font-inter relative flex h-screen max-h-screen flex-col overflow-hidden text-gray-900">
       {/* Header */}
       <div className="z-10 flex h-16 max-h-16 min-h-16 shrink-0 items-center bg-white px-4 py-3 shadow-sm">
         <button
@@ -356,11 +356,12 @@ export default function GroupChat() {
                     </div>
                   ))}
                 <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${mine ? "rounded-br-none bg-blue-600 text-white" : "rounded-bl-none bg-gray-200 text-gray-800"}`}
+                  className={`max-w-[70%] overflow-hidden rounded-2xl px-4 py-2 wrap-break-word shadow-sm ${mine ? "rounded-br-none bg-blue-600 text-white" : "rounded-bl-none bg-gray-200 text-gray-800"}`}
+                  style={{ wordBreak: "break-word", whiteSpace: "pre-line" }}
                 >
                   {parent && (
                     <div
-                      className={`mb-2 rounded-lg border bg-green-400 ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}
+                      className={`mb-2 rounded-lg border bg-gray-200 ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}
                     >
                       <div className="text-xs font-semibold text-gray-600">
                         {parent.students?.displayname || "User"}
@@ -371,7 +372,7 @@ export default function GroupChat() {
                         </div>
                       )}
                       {!parent.content && parent.attachment_name && (
-                        <div className="text-xs text-gray-700">
+                        <div className="text-xs text-ellipsis text-gray-700">
                           Attachment: {parent.attachment_name}
                         </div>
                       )}
@@ -383,18 +384,26 @@ export default function GroupChat() {
                     </span>
                   )}
                   {msg.content && (
-                    <p className="text-sm font-medium">{msg.content}</p>
+                    <p className="text-sm font-medium wrap-break-word whitespace-pre-line">
+                      {msg.content}
+                    </p>
                   )}
                   {msg.attachment_url && (
                     <a
                       href={msg.attachment_url}
                       target="_blank"
                       rel="noreferrer"
-                      className={`mt-1 block text-xs underline ${mine ? "text-blue-100" : "text-blue-600"}`}
+                      className={`mt-1 block text-xs underline ${mine ? "text-blue-100" : "text-blue-600"} max-w-[180px] truncate wrap-break-word`}
+                      title={msg.attachment_name || msg.attachment_url}
                     >
-                      {msg.attachment_name || "View Attachment"}
+                      {msg.attachment_name
+                        ? msg.attachment_name
+                        : msg.attachment_url.length > 32
+                          ? msg.attachment_url.slice(0, 29) + "..."
+                          : msg.attachment_url}
                     </a>
                   )}
+
                   <span
                     className={`mt-1 block text-[10px] ${mine ? "text-blue-100" : "text-gray-500"} text-right`}
                   >
@@ -412,7 +421,7 @@ export default function GroupChat() {
                     <button
                       type="button"
                       onClick={() => setReplyTarget(msg)}
-                      className={`group flex items-center space-x-1 text-[11px] ${mine ? "text-blue-100 hover:text-white" : "text-gray-600 hover:text-gray-800"} hover:cursor-pointer`}
+                      className={`group flex items-center space-x-1 text-[11px] ${mine ? "text-blue-100 hover:text-white" : "text-gray-600 hover:text-gray-800"}`}
                     >
                       <CornerUpLeft size={14} />
                       <span>Reply</span>
@@ -435,11 +444,13 @@ export default function GroupChat() {
             );
           })
         )}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef}></div>
+        {/* Placeholder height to prevent messages from being hidden */}
+        <div className="h-20"></div>
       </div>
-
-      {/* Input Bar */}
-      <div className="z-10 w-full flex-shrink-0 bg-gray-100 p-4">
+      {/* Sticky Input Bar */}
+      <div className="absolute bottom-0 left-0 z-20 w-full bg-gray-100 p-4">
+        {/* Input Bar */}
         <form onSubmit={handleSend} className="flex w-full flex-col space-y-2">
           {replyTarget && (
             <div className="flex w-full items-start justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
@@ -448,7 +459,7 @@ export default function GroupChat() {
                   Replying to {replyTarget.students?.displayname || "User"}
                 </div>
                 {replyTarget.content && (
-                  <div className="line-clamp-2 text-xs break-words text-gray-600">
+                  <div className="line-clamp-2 text-xs wrap-break-word text-gray-600">
                     {replyTarget.content}
                   </div>
                 )}
@@ -468,7 +479,7 @@ export default function GroupChat() {
               </button>
             </div>
           )}
-
+          {/* Selected file preview / full-width chip above the input so it doesn't shrink the text field */}
           {file && (
             <div className="flex w-full flex-col space-y-1">
               <div className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
