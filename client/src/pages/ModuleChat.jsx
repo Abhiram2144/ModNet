@@ -533,6 +533,8 @@ export default function ModuleChat() {
           })
         )}
         <div ref={messagesEndRef}></div>
+        {/* Placeholder height to prevent messages from being hidden */}
+        <div className="h-20"></div>
       </div>
       {/* Sticky Input Bar */}
       <div className="absolute bottom-0 left-0 z-20 w-full bg-gray-100 p-4">
