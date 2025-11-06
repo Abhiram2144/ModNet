@@ -153,18 +153,28 @@ const Login = () => {
   }
 
   return (
-    <LoginForm
-      title="Welcome to ModNet 📘"
-      email={email}
-      otp={otp}
-      step={step}
-      loading={loading}
-      message={message}
-      onEmailChange={(e) => setEmail(e.target.value)}
-      onOtpChange={(e) => setOtp(e.target.value)}
-      onSubmit={step === "email" ? handleSendOtp : handleVerifyOtp}
-      onSwitch={() => setStep("email")}
-    />
+    <div className="relative">
+      <LoginForm
+        title="Welcome to ModNet 📘"
+        email={email}
+        otp={otp}
+        step={step}
+        loading={loading}
+        message={message}
+        onEmailChange={(e) => setEmail(e.target.value)}
+        onOtpChange={(e) => setOtp(e.target.value)}
+        onSubmit={step === "email" ? handleSendOtp : handleVerifyOtp}
+        onSwitch={() => setStep("email")}
+      />
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2">
+        <button
+          onClick={() => navigate("/admin/login")}
+          className="text-sm text-gray-600 hover:text-gray-900 underline"
+        >
+          Sign in as Admin
+        </button>
+      </div>
+    </div>
   );
 };
 

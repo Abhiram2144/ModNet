@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Home, User, MessageSquare } from "lucide-react";
+import { Home, User, MessageSquare, Compass } from "lucide-react";
 
 export default function Footer() {
   const { user } = useAuth();
@@ -10,6 +10,7 @@ export default function Footer() {
   if (!user) return null;
 
   const buttons = [
+    { label: "Discover", icon: Compass, path: "/discover" },
     { label: "Home", icon: Home, path: "/home" },
     { label: "Account", icon: User, path: "/account" },
     { label: "Review", icon: MessageSquare, path: "/review" },
