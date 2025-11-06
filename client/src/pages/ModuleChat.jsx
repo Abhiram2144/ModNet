@@ -3,7 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 // import { ArrowLeft, Send, Paperclip, Loader2 } from "lucide-react";
-import { ArrowLeft, Send, Paperclip, Loader2, CornerUpLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  Send,
+  Paperclip,
+  Loader2,
+  CornerUpLeft,
+} from "lucide-react";
 
 export default function ModuleChat() {
   const { moduleId } = useParams();
@@ -139,11 +145,17 @@ export default function ModuleChat() {
               const newRow = payload.new;
 
               // If the realtime payload already contains joined students info, use it.
-              if (newRow.students && (newRow.students.displayname || newRow.students.profileimage)) {
+              if (
+                newRow.students &&
+                (newRow.students.displayname || newRow.students.profileimage)
+              ) {
                 setMessages((prev) => {
                   if (prev.some((m) => m.id === newRow.id)) return prev;
                   const next = [...prev, newRow];
-                  try { lastSeenRef.current = newRow.created_at || lastSeenRef.current; } catch {}
+                  try {
+                    lastSeenRef.current =
+                      newRow.created_at || lastSeenRef.current;
+                  } catch {}
                   return next;
                 });
                 return;
@@ -154,7 +166,7 @@ export default function ModuleChat() {
                 const { data: fullMsg, error: fullErr } = await supabase
                   .from("messages")
                   .select(
-                    `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`
+                    `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
                   )
                   .eq("id", newRow.id)
                   .maybeSingle();
@@ -164,13 +176,19 @@ export default function ModuleChat() {
                   setMessages((prev) => {
                     if (prev.some((m) => m.id === fullMsg.id)) return prev;
                     const next = [...prev, fullMsg];
-                    try { lastSeenRef.current = fullMsg.created_at || lastSeenRef.current; } catch {}
+                    try {
+                      lastSeenRef.current =
+                        fullMsg.created_at || lastSeenRef.current;
+                    } catch {}
                     return next;
                   });
                   return;
                 }
               } catch (err) {
-                console.warn("Failed to fetch full message for realtime insert:", err?.message || err);
+                console.warn(
+                  "Failed to fetch full message for realtime insert:",
+                  err?.message || err,
+                );
               }
 
               // Fallback: try to fetch the student row and attach it to the payload
@@ -185,22 +203,31 @@ export default function ModuleChat() {
                 setMessages((prev) => {
                   if (prev.some((m) => m.id === enriched.id)) return prev;
                   const next = [...prev, enriched];
-                  try { lastSeenRef.current = enriched.created_at || lastSeenRef.current; } catch {}
+                  try {
+                    lastSeenRef.current =
+                      enriched.created_at || lastSeenRef.current;
+                  } catch {}
                   return next;
                 });
                 return;
               } catch (err) {
-                console.warn("Failed to fetch student for realtime message:", err?.message || err);
+                console.warn(
+                  "Failed to fetch student for realtime message:",
+                  err?.message || err,
+                );
               }
 
               // As a last resort, append the raw payload (deduped)
               setMessages((prev) => {
                 if (prev.some((m) => m.id === newRow.id)) return prev;
                 const next = [...prev, newRow];
-                try { lastSeenRef.current = newRow.created_at || lastSeenRef.current; } catch {}
+                try {
+                  lastSeenRef.current =
+                    newRow.created_at || lastSeenRef.current;
+                } catch {}
                 return next;
               });
-            }
+            },
           )
           .subscribe((status) => {
             if (status === "SUBSCRIBED") {
@@ -228,7 +255,7 @@ export default function ModuleChat() {
           let query = supabase
             .from("messages")
             .select(
-              `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`
+              `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
             )
             .eq("moduleid", moduleId)
             .order("created_at", { ascending: true });
@@ -243,7 +270,10 @@ export default function ModuleChat() {
             setMessages((prev) => {
               const have = new Set(prev.map((m) => m.id));
               const merged = [...prev, ...newer.filter((m) => !have.has(m.id))];
-              try { lastSeenRef.current = merged[merged.length - 1]?.created_at || lastSeenRef.current; } catch {}
+              try {
+                lastSeenRef.current =
+                  merged[merged.length - 1]?.created_at || lastSeenRef.current;
+              } catch {}
               return merged;
             });
           }
@@ -322,8 +352,8 @@ export default function ModuleChat() {
         setMessages((prev) => [...prev, insertedMsg]);
       }
 
-  setContent("");
-  setReplyTarget(null);
+      setContent("");
+      setReplyTarget(null);
       setFile(null);
     } catch (err) {
       console.error("Error:", err.message);
@@ -360,9 +390,9 @@ export default function ModuleChat() {
   }
 
   return (
-    <div className="font-inter flex flex-col text-gray-900 h-[100dvh] max-h-[100dvh] overflow-hidden">
+    <div className="font-inter flex h-svh max-h-svh flex-col overflow-hidden text-gray-900">
       {/* Header */}
-      <div className="flex items-center px-4 py-3 shadow-sm flex-shrink-0 h-16 min-h-16 max-h-16 bg-white z-10">
+      <div className="z-10 flex h-16 max-h-16 min-h-16 shrink-0 items-center bg-white px-4 py-3 shadow-sm">
         <button
           onClick={() => navigate("/home")}
           className="mr-3 text-gray-500 hover:cursor-pointer hover:text-gray-700"
@@ -375,7 +405,7 @@ export default function ModuleChat() {
       </div>
 
       {/* Chat Area */}
-  <div className="scrollbar-thin scrollbar-thumb-gray-300 flex-1 min-h-0 space-y-4 overflow-y-auto bg-gray-50 p-4">
+      <div className="scrollbar-thin scrollbar-thumb-gray-300 min-h-0 flex-1 space-y-4 overflow-y-auto bg-gray-50 p-4">
         {messages.length === 0 ? (
           <p className="mt-10 text-center text-gray-500">
             Start the conversation 💬
@@ -383,7 +413,9 @@ export default function ModuleChat() {
         ) : (
           messages.map((msg) => {
             const mine = isMyMessage(msg);
-            const parent = msg.reply_to_id ? messages.find((m) => m.id === msg.reply_to_id) : null;
+            const parent = msg.reply_to_id
+              ? messages.find((m) => m.id === msg.reply_to_id)
+              : null;
             return (
               <div
                 key={msg.id}
@@ -404,14 +436,17 @@ export default function ModuleChat() {
                     </div>
                   ))}
                 <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${
+                  className={`max-w-[70%] overflow-hidden rounded-2xl px-4 py-2 break-words shadow-sm ${
                     mine
                       ? "rounded-br-none bg-blue-600 text-white"
                       : "rounded-bl-none bg-gray-200 text-gray-800"
                   }`}
+                  style={{ wordBreak: "break-word", whiteSpace: "pre-line" }}
                 >
                   {parent && (
-                    <div className={`mb-2 rounded-lg border ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}>
+                    <div
+                      className={`mb-2 rounded-lg border bg-gray-200 ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}
+                    >
                       <div className="text-xs font-semibold text-gray-600">
                         {parent.students?.displayname || "User"}
                       </div>
@@ -421,7 +456,9 @@ export default function ModuleChat() {
                         </div>
                       )}
                       {!parent.content && parent.attachment_name && (
-                        <div className="text-xs text-gray-700">Attachment: {parent.attachment_name}</div>
+                        <div className="text-xs text-ellipsis text-gray-700">
+                          Attachment: {parent.attachment_name}
+                        </div>
                       )}
                     </div>
                   )}
@@ -431,7 +468,9 @@ export default function ModuleChat() {
                     </span>
                   )}
                   {msg.content && (
-                    <p className="text-sm font-medium">{msg.content}</p>
+                    <p className="text-sm font-medium break-words whitespace-pre-line">
+                      {msg.content}
+                    </p>
                   )}
                   {msg.attachment_url && (
                     <a
@@ -440,9 +479,14 @@ export default function ModuleChat() {
                       rel="noreferrer"
                       className={`mt-1 block text-xs underline ${
                         mine ? "text-blue-100" : "text-blue-600"
-                      }`}
+                      } max-w-[180px] truncate break-words`}
+                      title={msg.attachment_name || msg.attachment_url}
                     >
-                      {msg.attachment_name || "View Attachment"}
+                      {msg.attachment_name
+                        ? msg.attachment_name
+                        : msg.attachment_url.length > 32
+                          ? msg.attachment_url.slice(0, 29) + "..."
+                          : msg.attachment_url}
                     </a>
                   )}
 
@@ -459,7 +503,9 @@ export default function ModuleChat() {
                         Intl.DateTimeFormat().resolvedOptions().timeZone,
                     })}
                   </span>
-                  <div className={`mt-1 flex ${mine ? "justify-start" : "justify-end"}`}>
+                  <div
+                    className={`mt-1 flex ${mine ? "justify-start" : "justify-end"}`}
+                  >
                     <button
                       type="button"
                       onClick={() => setReplyTarget(msg)}
@@ -488,18 +534,24 @@ export default function ModuleChat() {
         )}
         <div ref={messagesEndRef}></div>
       </div>
-      <div className="flex-shrink-0 w-full bg-gray-100 p-4 z-10">
+      <div className="z-10 w-full flex-shrink-0 bg-gray-100 p-4">
         {/* Input Bar */}
         <form onSubmit={handleSend} className="flex w-full flex-col space-y-2">
           {replyTarget && (
             <div className="flex w-full items-start justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
               <div className="mr-3 min-w-0">
-                <div className="text-xs font-semibold text-gray-700">Replying to {replyTarget.students?.displayname || "User"}</div>
+                <div className="text-xs font-semibold text-gray-700">
+                  Replying to {replyTarget.students?.displayname || "User"}
+                </div>
                 {replyTarget.content && (
-                  <div className="line-clamp-2 text-xs text-gray-600 break-words">{replyTarget.content}</div>
+                  <div className="line-clamp-2 text-xs break-words text-gray-600">
+                    {replyTarget.content}
+                  </div>
                 )}
                 {!replyTarget.content && replyTarget.attachment_name && (
-                  <div className="text-xs text-gray-600">Attachment: {replyTarget.attachment_name}</div>
+                  <div className="text-xs text-gray-600">
+                    Attachment: {replyTarget.attachment_name}
+                  </div>
                 )}
               </div>
               <button
@@ -515,18 +567,23 @@ export default function ModuleChat() {
           {/* Selected file preview / full-width chip above the input so it doesn't shrink the text field */}
           {file && (
             <div className="flex w-full flex-col space-y-1">
-              <div className="flex items-center justify-between w-full rounded-lg bg-white px-3 py-2 border border-gray-300">
+              <div className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
                 <div className="flex items-center space-x-3">
                   <Paperclip size={16} className="text-gray-600" />
-                  <div className="text-sm font-medium text-gray-800 truncate max-w-[60vw]">
+                  <div className="max-w-[60vw] truncate text-sm font-medium text-gray-800">
                     {file.name}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                  <span className="text-xs text-gray-500">
+                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                  </span>
                   <button
                     type="button"
-                    onClick={() => { setFile(null); setFileError(""); }}
+                    onClick={() => {
+                      setFile(null);
+                      setFileError("");
+                    }}
                     className="text-sm text-gray-500 hover:text-gray-700"
                     aria-label="Remove attached file"
                   >
@@ -544,7 +601,11 @@ export default function ModuleChat() {
             <label
               htmlFor="file-input"
               className={`cursor-pointer text-gray-500 hover:text-gray-700 ${sending ? "pointer-events-none opacity-50" : ""}`}
-              title={file ? "Remove current file to attach a new one" : "Attach a file"}
+              title={
+                file
+                  ? "Remove current file to attach a new one"
+                  : "Attach a file"
+              }
             >
               <Paperclip size={20} />
               <input
@@ -555,7 +616,9 @@ export default function ModuleChat() {
                   // Only accept one file at a time. If one is already present, show an error message.
                   if (!e.target.files || e.target.files.length === 0) return;
                   if (file) {
-                    setFileError("Only one file can be attached at a time. Remove the current file to attach another.");
+                    setFileError(
+                      "Only one file can be attached at a time. Remove the current file to attach another.",
+                    );
                     setTimeout(() => setFileError(""), 3500);
                     // reset input value so selecting the same file again triggers change next time
                     e.target.value = null;
@@ -579,7 +642,11 @@ export default function ModuleChat() {
               disabled={sending}
               className="bg-primary flex items-center justify-center rounded-full p-3 text-white transition disabled:opacity-50"
             >
-              {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+              {sending ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <Send size={18} />
+              )}
             </button>
           </div>
         </form>
