@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [channels, setChannels] = useState([]);
   const [courses, setCourses] = useState([]);
   const [modules, setModules] = useState([]);
+  const [profileImages, setProfileImages] = useState([]);
 
   // UI states
   const [loading, setLoading] = useState(true);
@@ -64,6 +65,13 @@ export default function Dashboard() {
           .order("created_at", { ascending: false });
         if (error) throw error;
         setModules(data || []);
+      } else if (activeTab === "profileImages") {
+        const { data, error } = await supabase
+          .from("profile_images")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        setProfileImages(data || []);
       }
     } catch (err) {
       setError(err.message || "Failed to load data");
@@ -161,6 +169,27 @@ export default function Dashboard() {
             .eq("id", editingItem.id);
           if (error) throw error;
         }
+      } else if (activeTab === "profileImages") {
+        if (modalMode === "add") {
+          const { error } = await supabase.from("profile_images").insert([
+            {
+              image_url: formData.image_url || "",
+              name: formData.name || "",
+              is_active: formData.is_active !== false,
+            },
+          ]);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("profile_images")
+            .update({
+              image_url: formData.image_url,
+              name: formData.name,
+              is_active: formData.is_active,
+            })
+            .eq("id", editingItem.id);
+          if (error) throw error;
+        }
       }
       closeModal();
       loadData();
@@ -174,6 +203,7 @@ export default function Dashboard() {
     setError("");
     try {
       let table = activeTab;
+      if (activeTab === "profileImages") table = "profile_images";
       const { error } = await supabase.from(table).delete().eq("id", id);
       if (error) throw error;
       loadData();
@@ -193,11 +223,63 @@ export default function Dashboard() {
     if (activeTab === "channels") data = channels;
     else if (activeTab === "courses") data = courses;
     else if (activeTab === "modules") data = modules;
+    else if (activeTab === "profileImages") data = profileImages;
 
     if (data.length === 0) {
       return (
         <div className="text-center py-12 text-gray-500">
-          No {activeTab} found. Add your first one!
+          No {activeTab === "profileImages" ? "profile images" : activeTab} found. Add your first one!
+        </div>
+      );
+    }
+
+    // Special render for profile images
+    if (activeTab === "profileImages") {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {data.map((item) => (
+            <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                    {item.name || `Image ${item.id}`}
+                  </h3>
+                  <span className={`inline-block px-2 py-1 text-xs rounded-full ${item.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                    {item.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => openEditModal(item)}
+                    className="text-blue-600 hover:text-blue-800"
+                    title="Edit"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-2">
+                <img
+                  src={item.image_url}
+                  alt={item.name || 'Profile'}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/150?text=Invalid+URL';
+                  }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 truncate" title={item.image_url}>
+                {item.image_url}
+              </p>
+            </div>
+          ))}
         </div>
       );
     }
@@ -369,6 +451,63 @@ export default function Dashboard() {
           </div>
         </>
       );
+    } else if (activeTab === "profileImages") {
+      return (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Image URL *
+            </label>
+            <input
+              type="url"
+              value={formData.image_url || ""}
+              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="https://example.com/image.jpg"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Name
+            </label>
+            <input
+              type="text"
+              value={formData.name || ""}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="e.g., Avatar 1"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.is_active !== false}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Active (visible to users)</span>
+            </label>
+          </div>
+          {formData.image_url && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Preview
+              </label>
+              <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden">
+                <img
+                  src={formData.image_url}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/150?text=Invalid+URL';
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </>
+      );
     }
   };
 
@@ -396,18 +535,18 @@ export default function Dashboard() {
       {/* Tabs */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {["channels", "courses", "modules"].map((tab) => (
+          <div className="flex space-x-8 overflow-x-auto">
+            {["channels", "courses", "modules", "profileImages"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-4 px-2 border-b-2 font-medium text-sm capitalize transition ${
+                className={`py-4 px-2 border-b-2 font-medium text-sm whitespace-nowrap transition ${
                   activeTab === tab
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                {tab}
+                {tab === "profileImages" ? "Profile Images" : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -418,15 +557,15 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Action bar */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 capitalize">
-            Manage {activeTab}
+          <h2 className="text-lg font-semibold text-gray-900">
+            Manage {activeTab === "profileImages" ? "Profile Images" : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
           </h2>
           <button
             onClick={openAddModal}
             className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition font-medium"
           >
             <Plus size={18} />
-            <span>Add {activeTab.slice(0, -1)}</span>
+            <span>Add {activeTab === "profileImages" ? "Image" : activeTab.slice(0, -1)}</span>
           </button>
         </div>
 
@@ -448,8 +587,8 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 capitalize">
-                {modalMode === "add" ? "Add" : "Edit"} {activeTab.slice(0, -1)}
+              <h3 className="text-lg font-semibold text-gray-900">
+                {modalMode === "add" ? "Add" : "Edit"} {activeTab === "profileImages" ? "Profile Image" : activeTab.slice(0, -1)}
               </h3>
               <button
                 onClick={closeModal}

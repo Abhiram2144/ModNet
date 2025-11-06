@@ -40,7 +40,7 @@ const LoginForm = ({
                 />
               </div>
               <button
-                className="bg-primary hover:bg-primary/90 w-full rounded-lg p-3 font-medium text-white transition"
+                className="bg-primary hover:bg-primary/90 w-full rounded-lg p-3 font-medium text-white transition hover:cursor-pointer"
                 type="submit"
                 disabled={loading}
               >
@@ -74,7 +74,7 @@ const LoginForm = ({
               <button
                 type="button"
                 onClick={onSwitch}
-                className="text-primary mt-1 border-none bg-none text-sm hover:underline"
+                className=" hover:cursor-pointer text-primary mt-1 border-none bg-none text-sm hover:underline"
               >
                 🔁 Resend OTP
               </button>
@@ -87,7 +87,7 @@ const LoginForm = ({
         )}
 
         <button
-          className="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white transition hover:bg-gray-700"
+          className="hover:cursor-pointer rounded-lg bg-gray-900 px-4 py-2 font-medium text-white transition hover:bg-gray-700"
           onClick={() => navigate("/")}
         >
           🏠 Go to Home
