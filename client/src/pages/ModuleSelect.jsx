@@ -62,8 +62,8 @@ const ModulesSelect = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedCourse || selectedModules.length === 0) {
-      alert("Please select a course and at least one module.");
+    if (!selectedCourse || selectedModules.length !== 4) {
+      alert("Please select a course and exactly four modules.");
       return;
     }
 

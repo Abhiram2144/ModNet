@@ -11,11 +11,15 @@ import { useAuth } from "../contexts/AuthContext";
 const Login = lazy(() => import("../pages/Login"));
 const ModuleSelect = lazy(() => import("../pages/ModuleSelect"));
 const Home = lazy(() => import("../pages/Home"));
+const Discover = lazy(() => import("../pages/Discover"));
 const Chat = lazy(() => import("../pages/ModuleChat"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const LandingPage = lazy(() => import("../pages/LandingPage"));
 const Account = lazy(() => import("../pages/Account"));
 const Review = lazy(() => import("../pages/Review"));
+const GroupChat = lazy(() => import("../pages/GroupChat"));
+const AdminLogin = lazy(() => import("../pages/AdminLogin"));
+const Dashboard = lazy(() => import("../pages/Dashboard"));
 // const SignUp = lazy(()=> import("../pages/SignUp"))
 
 // 🔐 Protected route wrapper
@@ -37,7 +41,11 @@ export default function AppRoutes() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         {/* <Route path = "/signup" element = {<SignUp/>} /> */}
+
+        {/* Admin Routes */}
+        <Route path="/dashboard" element={<Dashboard />} />
 
         {/* Protected Routes */}
         <Route
@@ -68,10 +76,28 @@ export default function AppRoutes() {
         />
 
         <Route
+          path="/discover"
+          element={
+            <ProtectedRoute>
+              <Discover />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/home"
           element={
             <ProtectedRoute>
               <Home />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/discover/chat/:key"
+          element={
+            <ProtectedRoute>
+              <GroupChat />
             </ProtectedRoute>
           }
         />

@@ -1,8 +1,7 @@
-import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
-// import { ArrowLeft, Send, Paperclip, Loader2 } from "lucide-react";
 import {
   ArrowLeft,
   Send,
@@ -11,30 +10,26 @@ import {
   CornerUpLeft,
 } from "lucide-react";
 
-export default function ModuleChat() {
-  const { moduleId } = useParams();
-  const { user, profile, userModules } = useAuth();
+export default function GroupChat() {
+  // Note: param name remains `key` in routes, but it now holds the channel id
+  const { key: channelId } = useParams();
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
 
   const [student, setStudent] = useState(null);
+  const [allowed, setAllowed] = useState(null);
+  const [channelInfo, setChannelInfo] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [moduleInfo, setModuleInfo] = useState(null);
   const [content, setContent] = useState("");
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState("");
   const [replyTarget, setReplyTarget] = useState(null);
   const [sending, setSending] = useState(false);
-  // If userModules are preloaded we can determine access synchronously
-  const initialAllowed = userModules
-    ? Boolean(userModules.some((m) => String(m.id) === String(moduleId)))
-    : null;
-  const [allowed, setAllowed] = useState(initialAllowed);
   const messagesEndRef = useRef(null);
-  const lastSeenRef = useRef(null); // latest created_at we've seen (for polling fallback)
+  const lastSeenRef = useRef(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = () =>
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
   useEffect(scrollToBottom, [messages]);
 
   useEffect(() => {
@@ -43,9 +38,10 @@ export default function ModuleChat() {
       return;
     }
 
-    const fetchStudentAndCheckAccess = async () => {
+    const init = async () => {
       try {
-        // If profile preloaded, use it
+        // Resolve current student id and basic profile (prefer preloaded)
+        let studentId = profile?.id;
         if (profile) {
           setStudent({
             id: profile.id,
@@ -53,98 +49,64 @@ export default function ModuleChat() {
             displayname: profile.displayname,
             profileimage: profile.profileimage,
           });
-
-          // Check access via preloaded userModules if available
-          if (userModules) {
-            const has = userModules.some(
-              (m) => String(m.id) === String(moduleId),
-            );
-            setAllowed(Boolean(has));
-          } else {
-            const { data: access, error: accessError } = await supabase
-              .from("user_modules")
-              .select("id")
-              .eq("userid", profile.id)
-              .eq("moduleid", moduleId)
-              .maybeSingle();
-
-            if (accessError) throw accessError;
-            setAllowed(Boolean(access));
-          }
         } else {
           const { data: studentData, error: studentError } = await supabase
             .from("students")
             .select("id, displayname, profileimage")
             .eq("userid", user.id)
             .maybeSingle();
-
           if (studentError || !studentData)
             throw new Error("Student not found");
           setStudent({ ...studentData, authid: user.id });
-
-          const { data: access, error: accessError } = await supabase
-            .from("user_modules")
-            .select("id")
-            .eq("userid", studentData.id)
-            .eq("moduleid", moduleId)
-            .maybeSingle();
-
-          if (accessError) throw accessError;
-          if (!access) {
-            setAllowed(false);
-            return;
-          }
-
-          setAllowed(true);
+          studentId = studentData.id;
         }
+        if (!studentId) throw new Error("No student id");
 
-        // Fetch module info for header
-        try {
-          const { data: mod, error: modError } = await supabase
-            .from("modules")
-            .select("id, name")
-            .eq("id", moduleId)
-            .maybeSingle();
+        // Check membership
+        const { data: memRows, error: memErr } = await supabase
+          .from("channel_members")
+          .select("id")
+          .eq("channel_id", channelId)
+          .eq("student_id", studentId)
+          .limit(1);
+        if (memErr) throw memErr;
+        setAllowed((memRows?.length || 0) > 0);
 
-          if (modError)
-            console.warn("Failed to load module details:", modError.message);
-          else if (mod) setModuleInfo(mod);
-        } catch (err) {
-          console.warn("Error fetching module details:", err.message);
-        }
+        // Channel details
+        const { data: ch, error: chErr } = await supabase
+          .from("channels")
+          .select("id, name, description")
+          .eq("id", channelId)
+          .maybeSingle();
+        if (!chErr && ch) setChannelInfo(ch);
 
-        // Fetch messages
-        const { data: msgs, error: msgError } = await supabase
-          .from("messages")
+        // Messages
+        const { data: msgs, error: msgErr } = await supabase
+          .from("group_messages")
           .select(
-            `
-            id, created_at, content, attachment_url, attachment_name, userid, reply_to_id,
-            students:userid (displayname, profileimage)
-          `,
+            `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id,
+             students:userid (displayname, profileimage)`,
           )
-          .eq("moduleid", moduleId)
+          .eq("channel_id", channelId)
           .order("created_at", { ascending: true });
-
-        if (msgError) throw msgError;
+        if (msgErr) throw msgErr;
         setMessages(msgs || []);
-        if (msgs && msgs.length > 0) {
+        if (msgs?.length)
           lastSeenRef.current = msgs[msgs.length - 1].created_at;
-        }
 
+        // Realtime
         const channel = supabase
-          .channel(`chat-${moduleId}`)
+          .channel(`group-chat-${channelId}`)
           .on(
             "postgres_changes",
             {
               event: "INSERT",
               schema: "public",
-              table: "messages",
-              filter: `moduleid=eq.${moduleId}`,
+              table: "group_messages",
+              filter: `channel_id=eq.${channelId}`,
             },
             async (payload) => {
               const newRow = payload.new;
-
-              // If the realtime payload already contains joined students info, use it.
               if (
                 newRow.students &&
                 (newRow.students.displayname || newRow.students.profileimage)
@@ -161,17 +123,14 @@ export default function ModuleChat() {
                 return;
               }
 
-              // Otherwise, try to fetch the full message row (with joined students) by id.
               try {
-                const { data: fullMsg, error: fullErr } = await supabase
-                  .from("messages")
+                const { data: fullMsg } = await supabase
+                  .from("group_messages")
                   .select(
                     `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
                   )
                   .eq("id", newRow.id)
                   .maybeSingle();
-
-                if (fullErr) throw fullErr;
                 if (fullMsg) {
                   setMessages((prev) => {
                     if (prev.some((m) => m.id === fullMsg.id)) return prev;
@@ -184,21 +143,14 @@ export default function ModuleChat() {
                   });
                   return;
                 }
-              } catch (err) {
-                console.warn(
-                  "Failed to fetch full message for realtime insert:",
-                  err?.message || err,
-                );
-              }
+              } catch {}
 
-              // Fallback: try to fetch the student row and attach it to the payload
               try {
                 const { data: studentRow } = await supabase
                   .from("students")
                   .select("displayname, profileimage")
                   .eq("id", newRow.userid)
                   .maybeSingle();
-
                 const enriched = { ...newRow, students: studentRow || null };
                 setMessages((prev) => {
                   if (prev.some((m) => m.id === enriched.id)) return prev;
@@ -210,14 +162,8 @@ export default function ModuleChat() {
                   return next;
                 });
                 return;
-              } catch (err) {
-                console.warn(
-                  "Failed to fetch student for realtime message:",
-                  err?.message || err,
-                );
-              }
+              } catch {}
 
-              // As a last resort, append the raw payload (deduped)
               setMessages((prev) => {
                 if (prev.some((m) => m.id === newRow.id)) return prev;
                 const next = [...prev, newRow];
@@ -229,23 +175,19 @@ export default function ModuleChat() {
               });
             },
           )
-          .subscribe((status) => {
-            if (status === "SUBSCRIBED") {
-              // console.debug(`Realtime subscribed to chat-${moduleId}`);
-            }
-          });
+          .subscribe();
 
         return () => supabase.removeChannel(channel);
       } catch (err) {
-        console.error("Error loading chat:", err.message);
+        console.error("Error loading group chat:", err?.message || err);
         setAllowed(false);
       }
     };
 
-    fetchStudentAndCheckAccess();
-  }, [user, moduleId, navigate, profile, userModules]);
+    init();
+  }, [user, profile, channelId, navigate]);
 
-  // Polling fallback: in case Realtime is disabled or blocked by network/policies, fetch new messages periodically
+  // Polling fallback
   useEffect(() => {
     let timer;
     if (allowed) {
@@ -253,20 +195,17 @@ export default function ModuleChat() {
         try {
           const since = lastSeenRef.current;
           let query = supabase
-            .from("messages")
+            .from("group_messages")
             .select(
               `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
             )
-            .eq("moduleid", moduleId)
+            .eq("channel_id", channelId)
             .order("created_at", { ascending: true });
 
-          if (since) {
-            query = query.gt("created_at", since);
-          }
+          if (since) query = query.gt("created_at", since);
 
-          const { data: newer, error: newerErr } = await query;
-          if (newerErr) return;
-          if (newer && newer.length) {
+          const { data: newer } = await query;
+          if (newer?.length) {
             setMessages((prev) => {
               const have = new Set(prev.map((m) => m.id));
               const merged = [...prev, ...newer.filter((m) => !have.has(m.id))];
@@ -283,53 +222,38 @@ export default function ModuleChat() {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [allowed, moduleId]);
+  }, [allowed, channelId]);
 
   const handleSend = async (e) => {
     e.preventDefault();
     if (!content.trim() && !file) return;
     setSending(true);
-
     try {
       let attachmentUrl = null;
       let attachmentName = null;
 
-      // Upload file if present
       if (file) {
         const fileExt = file.name.split(".").pop();
-        const uniqueName = `${Date.now()}-${Math.random()
-          .toString(36)
-          .substring(2)}.${fileExt}`;
+        const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${user.id}/${uniqueName}`;
-
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("attachments")
-          .upload(filePath, file, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
+          .upload(filePath, file, { cacheControl: "3600", upsert: false });
         if (uploadError) {
-          console.error("Upload error:", uploadError.message);
           alert("Failed to upload file: " + uploadError.message);
           setSending(false);
           return;
         }
-
         const { data: publicUrlData } = supabase.storage
           .from("attachments")
           .getPublicUrl(uploadData.path);
-
         attachmentUrl = publicUrlData.publicUrl;
         attachmentName = file.name;
       }
 
-      // Insert message and return the inserted row so we can render it immediately
       const payload = {
-        moduleid: moduleId,
-        // messages.userid must reference students.id (the students PK).
-        // Prefer the student's `id` (uuid) — not the Supabase auth id.
-        userid: student?.id,
+        channel_id: channelId,
+        userid: student?.id, // students.id
         reply_to_id: replyTarget?.id || null,
         content,
         attachment_url: attachmentUrl,
@@ -337,7 +261,7 @@ export default function ModuleChat() {
       };
 
       const { data: insertedMsg, error: insertError } = await supabase
-        .from("messages")
+        .from("group_messages")
         .insert([payload])
         .select(
           `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
@@ -345,10 +269,8 @@ export default function ModuleChat() {
         .maybeSingle();
 
       if (insertError) {
-        console.error("Insert error:", insertError.message);
         alert("Error sending message: " + insertError.message);
       } else if (insertedMsg) {
-        // append the inserted message immediately (avoid waiting for realtime)
         setMessages((prev) => [...prev, insertedMsg]);
       }
 
@@ -356,7 +278,7 @@ export default function ModuleChat() {
       setReplyTarget(null);
       setFile(null);
     } catch (err) {
-      console.error("Error:", err.message);
+      console.error(err);
     } finally {
       setSending(false);
     }
@@ -377,13 +299,13 @@ export default function ModuleChat() {
       <div className="flex h-screen flex-col items-center justify-center bg-gray-100 px-6 text-center text-gray-900">
         <h2 className="mb-2 text-2xl font-semibold">Access Denied 🚫</h2>
         <p className="mb-6 max-w-sm text-gray-600">
-          You don't have access to this module's chat.
+          You don't have access to this group's chat.
         </p>
         <button
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/discover")}
           className="rounded-full bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-500"
         >
-          Go Back Home
+          Back to Discover
         </button>
       </div>
     );
@@ -394,17 +316,17 @@ export default function ModuleChat() {
       {/* Header */}
       <div className="z-10 flex h-16 max-h-16 min-h-16 shrink-0 items-center bg-white px-4 py-3 shadow-sm">
         <button
-          onClick={() => navigate("/home")}
+          onClick={() => navigate(-1)}
           className="mr-3 text-gray-500 hover:cursor-pointer hover:text-gray-700"
         >
           <ArrowLeft size={22} />
         </button>
         <h1 className="truncate text-lg font-semibold">
-          {moduleInfo?.name ? moduleInfo.name : `Module ${moduleId}`}
+          {channelInfo?.name || "Group"}
         </h1>
       </div>
 
-      {/* Chat Area */}
+      {/* Messages */}
       <div className="scrollbar-thin scrollbar-thumb-gray-300 min-h-0 flex-1 space-y-4 overflow-y-auto bg-gray-50 p-4">
         {messages.length === 0 ? (
           <p className="mt-10 text-center text-gray-500">
@@ -419,9 +341,7 @@ export default function ModuleChat() {
             return (
               <div
                 key={msg.id}
-                className={`flex items-end ${
-                  mine ? "justify-end" : "justify-start"
-                }`}
+                className={`flex items-end ${mine ? "justify-end" : "justify-start"}`}
               >
                 {!mine &&
                   (msg.students?.profileimage ? (
@@ -436,16 +356,11 @@ export default function ModuleChat() {
                     </div>
                   ))}
                 <div
-                  className={`max-w-[70%] overflow-hidden rounded-2xl px-4 py-2 break-words shadow-sm ${
-                    mine
-                      ? "rounded-br-none bg-blue-600 text-white"
-                      : "rounded-bl-none bg-gray-200 text-gray-800"
-                  }`}
-                  style={{ wordBreak: "break-word", whiteSpace: "pre-line" }}
+                  className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${mine ? "rounded-br-none bg-blue-600 text-white" : "rounded-bl-none bg-gray-200 text-gray-800"}`}
                 >
                   {parent && (
                     <div
-                      className={`mb-2 rounded-lg border bg-gray-200 ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}
+                      className={`mb-2 rounded-lg border bg-green-400 ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}
                     >
                       <div className="text-xs font-semibold text-gray-600">
                         {parent.students?.displayname || "User"}
@@ -456,7 +371,7 @@ export default function ModuleChat() {
                         </div>
                       )}
                       {!parent.content && parent.attachment_name && (
-                        <div className="text-xs text-ellipsis text-gray-700">
+                        <div className="text-xs text-gray-700">
                           Attachment: {parent.attachment_name}
                         </div>
                       )}
@@ -468,32 +383,20 @@ export default function ModuleChat() {
                     </span>
                   )}
                   {msg.content && (
-                    <p className="text-sm font-medium break-words whitespace-pre-line">
-                      {msg.content}
-                    </p>
+                    <p className="text-sm font-medium">{msg.content}</p>
                   )}
                   {msg.attachment_url && (
                     <a
                       href={msg.attachment_url}
                       target="_blank"
                       rel="noreferrer"
-                      className={`mt-1 block text-xs underline ${
-                        mine ? "text-blue-100" : "text-blue-600"
-                      } max-w-[180px] truncate break-words`}
-                      title={msg.attachment_name || msg.attachment_url}
+                      className={`mt-1 block text-xs underline ${mine ? "text-blue-100" : "text-blue-600"}`}
                     >
-                      {msg.attachment_name
-                        ? msg.attachment_name
-                        : msg.attachment_url.length > 32
-                          ? msg.attachment_url.slice(0, 29) + "..."
-                          : msg.attachment_url}
+                      {msg.attachment_name || "View Attachment"}
                     </a>
                   )}
-
                   <span
-                    className={`mt-1 block text-[10px] ${
-                      mine ? "text-blue-100" : "text-gray-500"
-                    } text-right`}
+                    className={`mt-1 block text-[10px] ${mine ? "text-blue-100" : "text-gray-500"} text-right`}
                   >
                     {new Date(msg.created_at).toLocaleTimeString("en-GB", {
                       hour: "2-digit",
@@ -509,7 +412,7 @@ export default function ModuleChat() {
                     <button
                       type="button"
                       onClick={() => setReplyTarget(msg)}
-                      className={`group flex items-center space-x-1 text-[11px] ${mine ? "text-blue-100 hover:text-white" : "text-gray-600 hover:text-gray-800"}`}
+                      className={`group flex items-center space-x-1 text-[11px] ${mine ? "text-blue-100 hover:text-white" : "text-gray-600 hover:text-gray-800"} hover:cursor-pointer`}
                     >
                       <CornerUpLeft size={14} />
                       <span>Reply</span>
@@ -532,10 +435,11 @@ export default function ModuleChat() {
             );
           })
         )}
-        <div ref={messagesEndRef}></div>
+        <div ref={messagesEndRef} />
       </div>
+
+      {/* Input Bar */}
       <div className="z-10 w-full flex-shrink-0 bg-gray-100 p-4">
-        {/* Input Bar */}
         <form onSubmit={handleSend} className="flex w-full flex-col space-y-2">
           {replyTarget && (
             <div className="flex w-full items-start justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
@@ -564,7 +468,7 @@ export default function ModuleChat() {
               </button>
             </div>
           )}
-          {/* Selected file preview / full-width chip above the input so it doesn't shrink the text field */}
+
           {file && (
             <div className="flex w-full flex-col space-y-1">
               <div className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2">
@@ -613,14 +517,12 @@ export default function ModuleChat() {
                 type="file"
                 className="hidden"
                 onChange={(e) => {
-                  // Only accept one file at a time. If one is already present, show an error message.
                   if (!e.target.files || e.target.files.length === 0) return;
                   if (file) {
                     setFileError(
                       "Only one file can be attached at a time. Remove the current file to attach another.",
                     );
                     setTimeout(() => setFileError(""), 3500);
-                    // reset input value so selecting the same file again triggers change next time
                     e.target.value = null;
                     return;
                   }
