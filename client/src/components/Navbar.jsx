@@ -3,7 +3,6 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 import logo from "../assets/logo80.png";
-import LoginButton from "../components/LoginButton";
 import { LogOut, LogIn } from "lucide-react";
 
 export default function Navbar() {
