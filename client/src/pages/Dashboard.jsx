@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { Plus, Pencil, Trash2, X, LogOut } from "lucide-react";
+import { Plus, Pencil, Trash2, X, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -14,12 +14,18 @@ export default function Dashboard() {
   const [modules, setModules] = useState([]);
   const [profileImages, setProfileImages] = useState([]);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   // UI states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add" or "edit"
   const [editingItem, setEditingItem] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({});
@@ -38,6 +44,7 @@ export default function Dashboard() {
   // Load data based on active tab
   useEffect(() => {
     loadData();
+    setCurrentPage(1); // Reset to first page when switching tabs
   }, [activeTab]);
 
   const loadData = async () => {
@@ -48,28 +55,28 @@ export default function Dashboard() {
         const { data, error } = await supabase
           .from("channels")
           .select("*")
-          .order("created_at", { ascending: false });
+          .order("id", { ascending: true });
         if (error) throw error;
         setChannels(data || []);
       } else if (activeTab === "courses") {
         const { data, error } = await supabase
           .from("courses")
           .select("*")
-          .order("created_at", { ascending: false });
+          .order("id", { ascending: true });
         if (error) throw error;
         setCourses(data || []);
       } else if (activeTab === "modules") {
         const { data, error } = await supabase
           .from("modules")
           .select("*, courses:course_id(name)")
-          .order("created_at", { ascending: false });
+          .order("id", { ascending: true });
         if (error) throw error;
         setModules(data || []);
       } else if (activeTab === "profileImages") {
         const { data, error } = await supabase
           .from("profile_images")
           .select("*")
-          .order("created_at", { ascending: false });
+          .order("id", { ascending: true });
         if (error) throw error;
         setProfileImages(data || []);
       }
@@ -199,17 +206,28 @@ export default function Dashboard() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
+    setDeleteItemId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
     setError("");
     try {
       let table = activeTab;
       if (activeTab === "profileImages") table = "profile_images";
-      const { error } = await supabase.from(table).delete().eq("id", id);
+      const { error } = await supabase.from(table).delete().eq("id", deleteItemId);
       if (error) throw error;
+      setShowDeleteModal(false);
+      setDeleteItemId(null);
       loadData();
     } catch (err) {
       setError(err.message || "Failed to delete");
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteItemId(null);
   };
 
   const renderTable = () => {
@@ -236,32 +254,27 @@ export default function Dashboard() {
     // Special render for profile images
     if (activeTab === "profileImages") {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 p-4">
           {data.map((item) => (
-            <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                    {item.name || `Image ${item.id}`}
-                  </h3>
-                  <span className={`inline-block px-2 py-1 text-xs rounded-full ${item.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                    {item.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-                <div className="flex space-x-2">
+            <div key={item.id} className="border border-gray-200 rounded-lg p-2 hover:shadow-md transition">
+              <div className="flex items-start justify-between mb-2">
+                <span className={`inline-block px-2 py-0.5 text-[10px] rounded-full ${item.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                  {item.is_active ? 'Active' : 'Inactive'}
+                </span>
+                <div className="flex space-x-1">
                   <button
                     onClick={() => openEditModal(item)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 hover:cursor-pointer"
                     title="Edit"
                   >
-                    <Pencil size={16} />
+                    <Pencil size={14} />
                   </button>
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="text-red-600 hover:text-red-800"
+                    className="text-red-600 hover:text-red-800 hover:cursor-pointer"
                     title="Delete"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
@@ -275,7 +288,10 @@ export default function Dashboard() {
                   }}
                 />
               </div>
-              <p className="text-xs text-gray-500 truncate" title={item.image_url}>
+              <p className="text-[11px] font-medium text-gray-900 truncate mb-1" title={item.name || `Image ${item.id}`}>
+                {item.name || `Image ${item.id}`}
+              </p>
+              <p className="text-[10px] text-gray-500 truncate" title={item.image_url}>
                 {item.image_url}
               </p>
             </div>
@@ -284,76 +300,134 @@ export default function Dashboard() {
       );
     }
 
+    // Pagination for tables
+    const totalPages = Math.ceil(data.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = data.slice(startIndex, endIndex);
+
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100 border-b border-gray-200">
-              <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
-                ID
-              </th>
-              <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
-                Name
-              </th>
-              {activeTab === "modules" && (
-                <>
-                  <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
-                    Code
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
-                    Course
-                  </th>
-                </>
-              )}
-              <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
-                Description
-              </th>
-              <th className="text-right px-4 py-3 text-sm font-semibold text-gray-700">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((item) => (
-              <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3 text-sm text-gray-900">{item.id}</td>
-                <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                  {item.name}
-                </td>
+      <>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100 border-b border-gray-200">
+                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
+                  ID
+                </th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
+                  Name
+                </th>
                 {activeTab === "modules" && (
                   <>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {item.code || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {item.courses?.name || "—"}
-                    </td>
+                    <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
+                      Code
+                    </th>
+                    <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
+                      Course
+                    </th>
                   </>
                 )}
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {item.description || "—"}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => openEditModal(item)}
-                    className="inline-flex items-center text-blue-600 hover:text-blue-800 mr-3"
-                    title="Edit"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="inline-flex items-center text-red-600 hover:text-red-800"
-                    title="Delete"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
+                  Description
+                </th>
+                <th className="text-right px-4 py-3 text-sm font-semibold text-gray-700">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {paginatedData.map((item) => (
+                <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm text-gray-900">{item.id}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                    {item.name}
+                  </td>
+                  {activeTab === "modules" && (
+                    <>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {item.code || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {item.courses?.name || "—"}
+                      </td>
+                    </>
+                  )}
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {item.description || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => openEditModal(item)}
+                      className="inline-flex items-center text-blue-600 hover:text-blue-800 hover:cursor-pointer mr-3"
+                      title="Edit"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="inline-flex items-center text-red-600 hover:text-red-800 hover:cursor-pointer"
+                      title="Delete"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1} to {Math.min(endIndex, data.length)} of {data.length} items
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-lg border transition ${
+                  currentPage === 1
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:cursor-pointer'
+                }`}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded-lg transition hover:cursor-pointer ${
+                      currentPage === page
+                        ? 'bg-black text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-lg border transition ${
+                  currentPage === totalPages
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:cursor-pointer'
+                }`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </>
     );
   };
 
@@ -523,7 +597,7 @@ export default function Dashboard() {
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm font-medium text-gray-700"
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 hover:cursor-pointer rounded-lg transition text-sm font-medium text-gray-700"
             >
               <LogOut size={18} />
               <span>Logout</span>
@@ -540,7 +614,7 @@ export default function Dashboard() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-4 px-2 border-b-2 font-medium text-sm whitespace-nowrap transition ${
+                className={`py-4 px-2 border-b-2 font-medium text-sm whitespace-nowrap transition hover:cursor-pointer ${
                   activeTab === tab
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -562,7 +636,7 @@ export default function Dashboard() {
           </h2>
           <button
             onClick={openAddModal}
-            className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition font-medium"
+            className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:cursor-pointer transition font-medium"
           >
             <Plus size={18} />
             <span>Add {activeTab === "profileImages" ? "Image" : activeTab.slice(0, -1)}</span>
@@ -592,7 +666,7 @@ export default function Dashboard() {
               </h3>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 transition"
+                className="text-gray-400 hover:text-gray-600 hover:cursor-pointer transition"
               >
                 <X size={24} />
               </button>
@@ -604,15 +678,48 @@ export default function Dashboard() {
               <div className="flex space-x-3 mt-6">
                 <button
                   onClick={closeModal}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:cursor-pointer transition font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
-                  className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition font-medium"
+                  className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:cursor-pointer transition font-medium"
                 >
                   Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <Trash2 className="text-red-600" size={24} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                Delete {activeTab === "profileImages" ? "Profile Image" : activeTab.slice(0, -1)}?
+              </h3>
+              <p className="text-sm text-gray-600 text-center mb-6">
+                Are you sure you want to delete this item? This action cannot be undone.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:cursor-pointer transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 hover:cursor-pointer transition font-medium"
+                >
+                  Delete
                 </button>
               </div>
             </div>
