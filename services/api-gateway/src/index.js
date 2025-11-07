@@ -15,7 +15,9 @@ app.use(express.urlencoded({ extended: true }));
 const limiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.max,
-  message: 'Too many requests from this IP, please try again later.',
+  message: `Too many requests from this IP. Limit: ${config.rateLimit.max} requests per ${config.rateLimit.windowMs / 60000} minutes. Please try again later.`,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use(limiter);
 

@@ -173,13 +173,14 @@ class AuthService {
 
   /**
    * Get user modules (for preloading)
+   * @param {number} userId - The student table ID (not auth user ID)
    */
-  async getUserModules(studentId) {
+  async getUserModules(userId) {
     try {
       const { data, error } = await supabase
         .from('user_modules')
         .select(`moduleid, modules:moduleid (id, name, code)`)
-        .eq('userid', studentId);
+        .eq('userid', userId);
 
       if (error) throw error;
 

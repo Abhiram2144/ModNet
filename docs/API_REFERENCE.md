@@ -159,6 +159,8 @@ Get modules enrolled by a student.
 
 **Endpoint**: `GET /api/auth/modules/:studentId`
 
+**Note**: This endpoint is also available in the Module Service for consistency. The Auth Service version is optimized for session preloading.
+
 **Response**: `200 OK`
 ```json
 [

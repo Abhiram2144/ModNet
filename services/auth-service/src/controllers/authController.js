@@ -92,6 +92,7 @@ export const updateProfile = async (req, res) => {
 export const getUserModules = async (req, res) => {
   try {
     const { studentId } = req.params;
+    // Note: studentId here refers to the student table ID, not auth user ID
     const modules = await authService.getUserModules(studentId);
     res.json(modules);
   } catch (error) {
