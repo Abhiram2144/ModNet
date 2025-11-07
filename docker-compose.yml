@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # Auth Service
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: modnet-auth-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - NODE_ENV=production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: unless-stopped
+    networks:
+      - modnet-network
+
+  # Messaging Service
+  messaging-service:
+    build:
+      context: ./services/messaging-service
+      dockerfile: Dockerfile
+    container_name: modnet-messaging-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - NODE_ENV=production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+    restart: unless-stopped
+    networks:
+      - modnet-network
+
+  # Module Service
+  module-service:
+    build:
+      context: ./services/module-service
+      dockerfile: Dockerfile
+    container_name: modnet-module-service
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+      - NODE_ENV=production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+    restart: unless-stopped
+    networks:
+      - modnet-network
+
+  # Admin Service
+  admin-service:
+    build:
+      context: ./services/admin-service
+      dockerfile: Dockerfile
+    container_name: modnet-admin-service
+    ports:
+      - "8004:8004"
+    environment:
+      - PORT=8004
+      - NODE_ENV=production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    restart: unless-stopped
+    networks:
+      - modnet-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: modnet-api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - NODE_ENV=production
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - MESSAGING_SERVICE_URL=http://messaging-service:8002
+      - MODULE_SERVICE_URL=http://module-service:8003
+      - ADMIN_SERVICE_URL=http://admin-service:8004
+      - JWT_SECRET=${JWT_SECRET}
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+    depends_on:
+      - auth-service
+      - messaging-service
+      - module-service
+      - admin-service
+    restart: unless-stopped
+    networks:
+      - modnet-network
+
+  # Client (React PWA)
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: modnet-client
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_GATEWAY_URL=http://localhost:8000
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+    networks:
+      - modnet-network
+
+networks:
+  modnet-network:
+    driver: bridge
+
+volumes:
+  postgres-data:

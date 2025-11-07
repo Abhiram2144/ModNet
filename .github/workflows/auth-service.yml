@@ -1,0 +1,53 @@
+name: Auth Service CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/auth-service/**'
+      - '.github/workflows/auth-service.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'services/auth-service/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./services/auth-service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: services/auth-service/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: docker build -t auth-service:latest .
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy notification
+        run: echo "Deploy auth-service to production environment"
+        # Add deployment steps here (e.g., to Render, Fly.io, AWS ECS, etc.)
