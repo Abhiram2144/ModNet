@@ -15,34 +15,35 @@ import {
   updateCourse,
   deleteCourse,
 } from '../controllers/adminController.js';
+import { adminAuthLimiter, adminLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-// Auth
-router.post('/admin/login', login);
+// Auth with strict rate limiting
+router.post('/admin/login', adminAuthLimiter, login);
 
-// Channels
-router.get('/admin/channels', getChannels);
-router.post('/admin/channels', createChannel);
-router.put('/admin/channels/:channelId', updateChannel);
-router.delete('/admin/channels/:channelId', deleteChannel);
+// Channels with general admin rate limiting
+router.get('/admin/channels', adminLimiter, getChannels);
+router.post('/admin/channels', adminLimiter, createChannel);
+router.put('/admin/channels/:channelId', adminLimiter, updateChannel);
+router.delete('/admin/channels/:channelId', adminLimiter, deleteChannel);
 
-// Profile images
-router.get('/admin/profile-images', getProfileImages);
-router.post('/admin/profile-images', addProfileImage);
-router.delete('/admin/profile-images/:imageId', deleteProfileImage);
+// Profile images with general admin rate limiting
+router.get('/admin/profile-images', adminLimiter, getProfileImages);
+router.post('/admin/profile-images', adminLimiter, addProfileImage);
+router.delete('/admin/profile-images/:imageId', adminLimiter, deleteProfileImage);
 
-// Users
-router.get('/admin/users', getUsers);
+// Users with general admin rate limiting
+router.get('/admin/users', adminLimiter, getUsers);
 
-// Modules and Courses
-router.get('/admin/modules', getModules);
-router.get('/admin/courses', getCourses);
-router.post('/admin/courses', createCourse);
-router.put('/admin/courses/:courseId', updateCourse);
-router.delete('/admin/courses/:courseId', deleteCourse);
+// Modules and Courses with general admin rate limiting
+router.get('/admin/modules', adminLimiter, getModules);
+router.get('/admin/courses', adminLimiter, getCourses);
+router.post('/admin/courses', adminLimiter, createCourse);
+router.put('/admin/courses/:courseId', adminLimiter, updateCourse);
+router.delete('/admin/courses/:courseId', adminLimiter, deleteCourse);
 
-// Health check
+// Health check (no rate limit)
 router.get('/health', (req, res) => {
   res.json({ status: 'healthy', service: 'admin-service' });
 });

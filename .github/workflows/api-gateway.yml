@@ -11,9 +11,14 @@ on:
     paths:
       - 'services/api-gateway/**'
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: ./services/api-gateway
@@ -42,6 +47,8 @@ jobs:
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
