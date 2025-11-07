@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import CodeInput from "../components/CodeInput";
 
-const ADMIN_EMAIL = "abhiram.sathiraju@gmail.com";
-const ADMIN_CODE = "200104";
+const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL;
+const ADMIN_CODE = process.env.VITE_ADMIN_CODE;
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
