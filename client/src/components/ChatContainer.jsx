@@ -127,8 +127,8 @@ export default function ChatContainer({
                   ))}
                 <div className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${mine ? "rounded-br-none bg-blue-600 text-white" : "rounded-bl-none bg-gray-200 text-gray-800"}`}>
                   {parent && (
-                    <div className={`mb-2 rounded-lg border bg-green-400 ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}>
-                      <div className="text-xs font-semibold text-gray-600">{parent.students?.displayname || "User"}</div>
+                    <div className={`mb-2 rounded-lg border bg-gray-200 ${mine ? "border-blue-400/40 bg-blue-500/20" : "border-gray-300 bg-white/60"} px-3 py-2`}>
+                      <div className="text-xs font-semibold text-gray-700">{parent.students?.displayname || "User"}</div>
                       {parent.content && (
                         <div className="line-clamp-2 text-xs text-gray-700">{parent.content}</div>
                       )}
