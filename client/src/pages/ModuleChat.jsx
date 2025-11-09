@@ -25,12 +25,24 @@ export default function ModuleChat() {
     : null;
   const [allowed, setAllowed] = useState(initialAllowed);
   const messagesEndRef = useRef(null);
+  const isFirstLoadRef = useRef(true); // to jump to bottom immediately on initial load
   const lastSeenRef = useRef(null); // latest created_at we've seen (for polling fallback)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior = "smooth") => {
+    try {
+      messagesEndRef.current?.scrollIntoView({ behavior });
+    } catch (e) {}
   };
-  useEffect(scrollToBottom, [messages]);
+
+  useEffect(() => {
+    if (isFirstLoadRef.current) {
+      // Jump immediately on first render to avoid visible scroll-from-top flicker
+      scrollToBottom("auto");
+      isFirstLoadRef.current = false;
+    } else {
+      scrollToBottom("smooth");
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (!user) {

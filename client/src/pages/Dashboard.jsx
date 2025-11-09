@@ -26,6 +26,12 @@ export default function Dashboard() {
   const [editingItem, setEditingItem] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
+  // Members management modal
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [membersModalChannel, setMembersModalChannel] = useState(null);
+  const [membersInput, setMembersInput] = useState("");
+  const [membersProcessing, setMembersProcessing] = useState(false);
+  const [membersResult, setMembersResult] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({});
@@ -52,12 +58,29 @@ export default function Dashboard() {
     setError("");
     try {
       if (activeTab === "channels") {
+        // Load all channels (DB now has is_private column) and compute member counts
         const { data, error } = await supabase
           .from("channels")
           .select("*")
           .order("id", { ascending: true });
         if (error) throw error;
-        setChannels(data || []);
+        const ch = data || [];
+        if (ch.length) {
+          const ids = ch.map((c) => c.id);
+          const { data: members, error: memErr } = await supabase
+            .from("channel_members")
+            .select("channel_id, student_id")
+            .in("channel_id", ids);
+          if (memErr) throw memErr;
+          const counts = (members || []).reduce((acc, r) => {
+            acc[r.channel_id] = (acc[r.channel_id] || 0) + 1;
+            return acc;
+          }, {});
+          const mapped = ch.map((c) => ({ ...c, member_count: counts[c.id] || 0 }));
+          setChannels(mapped);
+        } else {
+          setChannels([]);
+        }
       } else if (activeTab === "courses") {
         const { data, error } = await supabase
           .from("courses")
@@ -95,14 +118,15 @@ export default function Dashboard() {
   const openAddModal = () => {
     setModalMode("add");
     setEditingItem(null);
-    setFormData({});
+    setFormData({ is_private: false });
     setShowModal(true);
   };
 
   const openEditModal = (item) => {
     setModalMode("edit");
     setEditingItem(item);
-    setFormData({ ...item });
+    // Populate form and set checkbox from DB value
+    setFormData({ ...item, is_private: !!item.is_private });
     setShowModal(true);
   };
 
@@ -115,22 +139,21 @@ export default function Dashboard() {
   const handleSave = async () => {
     setError("");
     try {
-      if (activeTab === "channels") {
+        if (activeTab === "channels") {
+        // channels map to the channels table; persist is_private boolean
+        let payload = {
+          name: formData.name || "",
+          description: formData.description || "",
+          is_private: !!formData.is_private,
+        };
+
         if (modalMode === "add") {
-          const { error } = await supabase.from("channels").insert([
-            {
-              name: formData.name || "",
-              description: formData.description || "",
-            },
-          ]);
+          const { error } = await supabase.from("channels").insert([payload]);
           if (error) throw error;
         } else {
           const { error } = await supabase
             .from("channels")
-            .update({
-              name: formData.name,
-              description: formData.description,
-            })
+            .update(payload)
             .eq("id", editingItem.id);
           if (error) throw error;
         }
@@ -198,6 +221,7 @@ export default function Dashboard() {
           if (error) throw error;
         }
       }
+      // Close modal and reload channel data
       closeModal();
       loadData();
     } catch (err) {
@@ -230,6 +254,88 @@ export default function Dashboard() {
     setDeleteItemId(null);
   };
 
+  // Members modal helpers
+  const closeMembersModal = () => {
+    setShowMembersModal(false);
+    setMembersModalChannel(null);
+    setMembersInput("");
+    setMembersResult(null);
+    setMembersProcessing(false);
+  };
+
+  const handleAddMembersConfirm = async () => {
+    if (!membersModalChannel) return;
+    const channelId = membersModalChannel.id;
+    // Parse emails: allow newline, comma, semicolon separated
+    const raw = membersInput || "";
+    const tokens = raw
+      .split(/[,;\n\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const uniqueTokens = Array.from(new Set(tokens.map((e) => e.toLowerCase())));
+    // If input already contains an @, treat as full email, otherwise append the student domain
+    const emails = uniqueTokens.map((t) => (t.includes("@") ? t : `${t}@student.le.ac.uk`));
+    if (emails?.length === 0) {
+      setMembersResult({ error: "No valid emails provided." });
+      return;
+    }
+
+    setMembersProcessing(true);
+    setMembersResult(null);
+    try {
+      // Fetch students matching these emails (assumes stored emails are normalized/lowercase)
+      const { data: studentsFound, error: studentsErr } = await supabase
+        .from("students")
+        .select("id, email, displayname")
+        .in("email", emails);
+
+      if (studentsErr) throw studentsErr;
+
+      const foundByEmail = new Map();
+      (studentsFound || []).forEach((s) => {
+        if (s.email) foundByEmail.set(String(s.email).toLowerCase(), s);
+      });
+
+      // Compare emails case-insensitively
+      const missing = emails.filter((e) => !foundByEmail.has(String(e).toLowerCase()));
+
+      const studentIds = (studentsFound || []).map((s) => s.id);
+
+      // Find existing memberships to avoid duplicates
+      let existing = [];
+      if (studentIds.length) {
+        const { data: ex } = await supabase
+          .from("channel_members")
+          .select("student_id")
+          .eq("channel_id", channelId)
+          .in("student_id", studentIds);
+        existing = ex || [];
+      }
+      const existingIds = new Set(existing.map((r) => r.student_id));
+
+      const toInsert = studentIds
+        .filter((id) => !existingIds.has(id))
+        .map((sid) => ({ channel_id: channelId, student_id: sid }));
+
+      let inserted = [];
+      if (toInsert.length) {
+        const { data: ins, error: insErr } = await supabase
+          .from("channel_members")
+          .insert(toInsert);
+        if (insErr) throw insErr;
+        inserted = ins || [];
+      }
+
+      setMembersResult({ added: inserted.length, already: existing.length, missing });
+      // Optionally refresh channel data
+      loadData();
+    } catch (err) {
+      setMembersResult({ error: err.message || String(err) });
+    } finally {
+      setMembersProcessing(false);
+    }
+  };
+
   const renderTable = () => {
     if (loading) {
       return (
@@ -251,7 +357,7 @@ export default function Dashboard() {
       );
     }
 
-    // Special render for profile images
+  // Special render for profile images
     if (activeTab === "profileImages") {
       return (
         <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 p-4">
@@ -300,6 +406,8 @@ export default function Dashboard() {
       );
     }
 
+    // No separate privateClubs tab: channels list includes both public and private channels
+
     // Pagination for tables
     const totalPages = Math.ceil(data.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -331,6 +439,9 @@ export default function Dashboard() {
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
                   Description
                 </th>
+                <th className="text-center px-4 py-3 text-sm font-semibold text-gray-700">
+                  Members
+                </th>
                 <th className="text-right px-4 py-3 text-sm font-semibold text-gray-700">
                   Actions
                 </th>
@@ -341,7 +452,12 @@ export default function Dashboard() {
                 <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm text-gray-900">{item.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                    {item.name}
+                    <div className="flex items-center space-x-2">
+                      <span>{item.name}</span>
+                      {item.is_private && (
+                        <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">Private</span>
+                      )}
+                    </div>
                   </td>
                   {activeTab === "modules" && (
                     <>
@@ -356,7 +472,24 @@ export default function Dashboard() {
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {item.description || "—"}
                   </td>
+                  <td className="px-4 py-3 text-center text-sm text-gray-600">
+                    {typeof item.member_count !== 'undefined' ? item.member_count : "—"}
+                  </td>
                   <td className="px-4 py-3 text-right">
+                    {(item.is_private) && (
+                      <button
+                        onClick={() => {
+                          setMembersModalChannel(item);
+                          setMembersInput("");
+                          setMembersResult(null);
+                          setShowMembersModal(true);
+                        }}
+                        className="inline-flex items-center text-gray-700 hover:text-gray-900 hover:cursor-pointer mr-3"
+                        title="Manage Members"
+                      >
+                        Members
+                      </button>
+                    )}
                     <button
                       onClick={() => openEditModal(item)}
                       className="inline-flex items-center text-blue-600 hover:text-blue-800 hover:cursor-pointer mr-3"
@@ -461,6 +594,20 @@ export default function Dashboard() {
               placeholder="Enter description"
             />
           </div>
+          {(activeTab === "channels") && (
+            <div className="mb-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.is_private !== false}
+                  onChange={(e) => setFormData({ ...formData, is_private: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Mark as private channel</span>
+              </label>
+              <div className="text-xs text-gray-500 mt-1">Private channels are stored in the database via the <code>is_private</code> column.</div>
+            </div>
+          )}
         </>
       );
     } else if (activeTab === "modules") {
@@ -634,13 +781,17 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold text-gray-900">
             Manage {activeTab === "profileImages" ? "Profile Images" : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
           </h2>
-          <button
-            onClick={openAddModal}
-            className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:cursor-pointer transition font-medium"
-          >
-            <Plus size={18} />
-            <span>Add {activeTab === "profileImages" ? "Image" : activeTab.slice(0, -1)}</span>
-          </button>
+                <button
+                  onClick={openAddModal}
+                  className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:cursor-pointer transition font-medium"
+                >
+                  <Plus size={18} />
+                  <span>
+                    {activeTab === "profileImages"
+                      ? "Add Image"
+                      : `Add ${activeTab.slice(0, -1)}`}
+                  </span>
+                </button>
         </div>
 
         {/* Error message */}
@@ -688,6 +839,28 @@ export default function Dashboard() {
                 >
                   Save
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Members Modal (Admin can paste emails to bulk-add to a channel) */}
+      {showMembersModal && membersModalChannel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Add members to "{membersModalChannel.name}"</h3>
+              <button onClick={closeMembersModal} className="text-gray-400 hover:text-gray-600 hover:cursor-pointer transition">✕</button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-4">Paste one or more student emails or usernames (separated by newline, comma, or semicolon). Students that match will be added to the selected channel.</p>
+              <textarea value={membersInput} onChange={(e) => setMembersInput(e.target.value)} rows={6} className="w-full rounded-lg border border-gray-300 p-3 mb-3" placeholder="abc123, def456, ghi789" />
+
+              <div className="flex items-center space-x-3 mt-6">
+                <button onClick={closeMembersModal} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:cursor-pointer transition font-medium">Cancel</button>
+                <button onClick={handleAddMembersConfirm} disabled={membersProcessing} className={`flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:cursor-pointer transition font-medium ${membersProcessing ? 'opacity-60 cursor-not-allowed' : ''}`}>{membersProcessing ? 'Adding…' : 'Add Members'}</button>
               </div>
             </div>
           </div>

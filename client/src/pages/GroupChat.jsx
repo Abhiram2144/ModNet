@@ -23,9 +23,21 @@ export default function GroupChat() {
   const messagesEndRef = useRef(null);
   const lastSeenRef = useRef(null);
 
-  const scrollToBottom = () =>
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  useEffect(scrollToBottom, [messages]);
+  const isFirstLoadRef = useRef(true);
+  const scrollToBottom = (behavior = "smooth") => {
+    try {
+      messagesEndRef.current?.scrollIntoView({ behavior });
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    if (isFirstLoadRef.current) {
+      scrollToBottom("auto");
+      isFirstLoadRef.current = false;
+    } else {
+      scrollToBottom("smooth");
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (!user) {

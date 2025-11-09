@@ -20,7 +20,7 @@ export default function Discover() {
   const { profile } = useAuth();
 
   // Server data
-  const [channels, setChannels] = useState([]); // all available channels
+  const [channels, setChannels] = useState([]); // all available channels (public + private)
   const [joinedIds, setJoinedIds] = useState(new Set()); // Set<string> channel ids the user has joined
   const [loading, setLoading] = useState(true);
   const [mutating, setMutating] = useState(null); // channel id being joined/left
@@ -33,12 +33,25 @@ export default function Discover() {
       setLoading(true);
       setError(null);
       try {
-        // Fetch all channels
-        const { data: ch, error: chErr } = await supabase
-          .from("channels")
-          .select("id, name, description")
-          .order("name", { ascending: true });
-        if (chErr) throw chErr;
+        // Try to load channels with is_private split (private clubs stored on channels.is_private)
+        try {
+          const { data: ch, error: chErr } = await supabase
+            .from("channels")
+            .select("id, name, description, is_private")
+            .order("name", { ascending: true });
+          if (chErr) throw chErr;
+          // keep all channels in one list; we'll mark private ones with is_private
+          setChannels(ch || []);
+        } catch (e) {
+          // Fallback: load channels without is_private (treat as public)
+          const { data: ch, error: chErr } = await supabase
+            .from("channels")
+            .select("id, name, description")
+            .order("name", { ascending: true });
+          if (chErr) throw chErr;
+          const fallback = (ch || []).map((c) => ({ ...c, is_private: false }));
+          setChannels(fallback);
+        }
 
         // Fetch membership for current student
         const { data: mem, error: memErr } = await supabase
@@ -47,7 +60,6 @@ export default function Discover() {
           .eq("student_id", profile.id);
         if (memErr) throw memErr;
 
-        setChannels(ch || []);
         setJoinedIds(new Set((mem || []).map((m) => m.channel_id)));
       } catch (e) {
         setError(e.message || String(e));
@@ -59,17 +71,19 @@ export default function Discover() {
   }, [profile?.id]);
 
   const myChats = useMemo(
-    () => channels.filter((c, idx) => joinedIds.has(c.id)).map((c, idx) => ({
+    () => channels.filter((c) => joinedIds.has(c.id)).map((c, idx) => ({
       ...c,
       _displayTitle: c.name || "Untitled",
       _displayDesc: c.description || "",
+      _isPrivate: !!c.is_private,
       _color: COLOR_CLASSES[idx % COLOR_CLASSES.length],
     })),
     [channels, joinedIds],
   );
 
   const otherChats = useMemo(
-    () => channels.filter((c) => !joinedIds.has(c.id)).map((c, idx) => ({
+    // Only include public channels that the user hasn't joined. Private channels are not shown here.
+    () => channels.filter((c) => !joinedIds.has(c.id) && !c.is_private).map((c, idx) => ({
       ...c,
       _displayTitle: c.name || "Untitled",
       _displayDesc: c.description || "",
@@ -172,13 +186,18 @@ export default function Discover() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between">
                           <div className="pr-3">
-                            <button
-                              type="button"
-                              onClick={() => navigate(`/discover/chat/${c.id}`)}
-                              className="text-left text-base font-semibold hover:underline"
-                            >
-                              {c._displayTitle}
-                            </button>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/discover/chat/${c.id}`)}
+                                className="text-left text-base font-semibold hover:underline"
+                              >
+                                {c._displayTitle}
+                              </button>
+                              {c._isPrivate && (
+                                <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">Private</span>
+                              )}
+                            </div>
                             {c._displayDesc && (
                               <p className="mt-1 line-clamp-2 text-sm text-gray-600">{c._displayDesc}</p>
                             )}
@@ -219,6 +238,8 @@ export default function Discover() {
             )}
           </section>
 
+          {/* (Private channels are shown in My chats / Other chats with a badge) */}
+
           {/* Other Chats */}
           <section>
             <div className="mb-2 flex items-center justify-between">
@@ -242,14 +263,23 @@ export default function Discover() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-base font-semibold">{c._displayTitle}</h3>
-                        <button
-                          onClick={() => joinChannel(c.id)}
-                          disabled={mutating === c.id}
-                          className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {mutating === c.id ? "Joining…" : "Join"}
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="text-base font-semibold">{c._displayTitle}</h3>
+                          {c._isPrivate && (
+                            <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">Private</span>
+                          )}
+                        </div>
+                        {c._isPrivate ? (
+                          <button className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 cursor-not-allowed" title="Private channel">Private</button>
+                        ) : (
+                          <button
+                            onClick={() => joinChannel(c.id)}
+                            disabled={mutating === c.id}
+                            className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {mutating === c.id ? "Joining…" : "Join"}
+                          </button>
+                        )}
                       </div>
                       {c._displayDesc && (
                         <p className="mt-1 line-clamp-2 text-sm text-gray-600">{c._displayDesc}</p>
