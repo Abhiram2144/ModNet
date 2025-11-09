@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Send, Paperclip, Loader2, CornerUpLeft } from "lucide-react";
+import { supabase } from "../lib/supabaseClient";
 
 export default function ChatContainer({
   chatType, // "group" or "module"
@@ -32,7 +33,40 @@ export default function ChatContainer({
   deniedButtonText,
   deniedButtonLink,
 }) {
+  const [chatOnlineCount, setChatOnlineCount] = useState(0);
   const isMyMessage = (msg) => msg.userid === student?.id;
+
+  // Presence: track how many users are currently in this chat
+  useEffect(() => {
+    if (!student || !allowed) return;
+    const presenceChannel = supabase.channel(`presence-chat-${chatId}`, {
+      config: { presence: { key: student.id } },
+    });
+
+    const updateFromState = () => {
+      try {
+        const state = presenceChannel.presenceState?.() || {};
+        setChatOnlineCount(Object.keys(state).length);
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    // sync and diffs
+    presenceChannel.on("presence", { event: "sync" }, () => {
+      updateFromState();
+    });
+    presenceChannel.on("presence", { event: "join" }, () => updateFromState());
+    presenceChannel.on("presence", { event: "leave" }, () => updateFromState());
+
+    presenceChannel.subscribe();
+
+    return () => {
+      try {
+        supabase.removeChannel(presenceChannel);
+      } catch (e) {}
+    };
+  }, [student, allowed, chatId]);
 
   if (allowed === null) {
     return (
@@ -67,7 +101,10 @@ export default function ChatContainer({
         >
           <ArrowLeft size={22} />
         </button>
-        <h1 className="truncate text-lg font-semibold">{headerTitle}</h1>
+        <div className="flex items-baseline space-x-3">
+          <h1 className="truncate text-lg font-semibold">{headerTitle}</h1>
+          <span className="text-sm text-gray-500">· {chatOnlineCount} online</span>
+        </div>
       </div>
 
       {/* Messages */}

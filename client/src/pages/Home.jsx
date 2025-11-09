@@ -11,6 +11,8 @@ export default function Home() {
   const navigate = useNavigate();
   const [modules, setModules] = useState([]);
   const { userModules } = useAuth();
+  const { profile } = useAuth();
+  const [onlineCount, setOnlineCount] = useState(0);
   // initialize loading to false if modules were preloaded in AuthContext
   const [loading, setLoading] = useState(!userModules);
   const username = user.email.split("@")[0];
@@ -66,6 +68,33 @@ export default function Home() {
     fetchModules();
   }, [user, navigate]);
 
+  // Presence for overall online users
+  useEffect(() => {
+    if (!profile) return;
+    const presence = supabase.channel("presence-online", {
+      config: { presence: { key: profile.id } },
+    });
+
+    const updateFromState = () => {
+      try {
+        const state = presence.presenceState?.() || {};
+        setOnlineCount(Object.keys(state).length);
+      } catch (e) {}
+    };
+
+    presence.on("presence", { event: "sync" }, () => updateFromState());
+    presence.on("presence", { event: "join" }, () => updateFromState());
+    presence.on("presence", { event: "leave" }, () => updateFromState());
+
+    presence.subscribe();
+
+    return () => {
+      try {
+        supabase.removeChannel(presence);
+      } catch (e) {}
+    };
+  }, [profile]);
+
   // const handleModuleClick = (moduleId) => navigate(`/chat/${moduleId}`);
 
   if (loading)
@@ -101,6 +130,10 @@ export default function Home() {
             Welcome{" "}
             <span className="font-bold text-yellow-500">{username}</span>
           </h1>
+          <div className="mb-4 text-sm text-gray-600">
+            <span className="inline-block mr-2">Online students:</span>
+            <span className="inline-block rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-800">{onlineCount}</span>
+          </div>
           {/* MVP notice */}
           <div className="mb-4 w-full">
             <div
