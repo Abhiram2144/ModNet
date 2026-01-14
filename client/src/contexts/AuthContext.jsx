@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
       const { data: dbUser, error: userErr } = await supabase
         .from("students")
         .select(
-          "id, displayname, email, profileimage, canreview, review, suggestion, courseid, userid",
+          "id, displayname, email, profileimage, courseid, userid",
         )
         .eq("userid", authUser.id)
         .maybeSingle();

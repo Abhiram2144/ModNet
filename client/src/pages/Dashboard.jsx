@@ -53,6 +53,23 @@ export default function Dashboard() {
     setCurrentPage(1); // Reset to first page when switching tabs
   }, [activeTab]);
 
+  // Always load courses for module dropdown
+  useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("courses")
+          .select("*")
+          .order("id", { ascending: true });
+        if (error) throw error;
+        setCourses(data || []);
+      } catch (err) {
+        console.error("Failed to load courses:", err);
+      }
+    };
+    loadCourses();
+  }, []);
+
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -154,8 +171,11 @@ export default function Dashboard() {
           const { error } = await supabase
             .from("channels")
             .update(payload)
-            .eq("id", editingItem.id);
-          if (error) throw error;
+            .eq("id", Number(editingItem.id));
+          if (error) {
+            console.error("Update error:", error);
+            throw error;
+          }
         }
       } else if (activeTab === "courses") {
         if (modalMode === "add") {
@@ -170,11 +190,14 @@ export default function Dashboard() {
           const { error } = await supabase
             .from("courses")
             .update({
-              name: formData.name,
-              description: formData.description,
+              name: formData.name || "",
+              description: formData.description || "",
             })
-            .eq("id", editingItem.id);
-          if (error) throw error;
+            .eq("id", Number(editingItem.id));
+          if (error) {
+            console.error("Update error:", error);
+            throw error;
+          }
         }
       } else if (activeTab === "modules") {
         if (modalMode === "add") {
@@ -183,7 +206,8 @@ export default function Dashboard() {
               name: formData.name || "",
               code: formData.code || "",
               description: formData.description || "",
-              course_id: formData.course_id || null,
+              course_id: formData.course_id ? Number(formData.course_id) : null,
+              semester: formData.semester || "summer",
             },
           ]);
           if (error) throw error;
@@ -191,13 +215,17 @@ export default function Dashboard() {
           const { error } = await supabase
             .from("modules")
             .update({
-              name: formData.name,
-              code: formData.code,
-              description: formData.description,
-              course_id: formData.course_id,
+              name: formData.name || "",
+              code: formData.code || "",
+              description: formData.description || "",
+              course_id: formData.course_id ? Number(formData.course_id) : null,
+              semester: formData.semester || "summer",
             })
-            .eq("id", editingItem.id);
-          if (error) throw error;
+            .eq("id", Number(editingItem.id));
+          if (error) {
+            console.error("Update error:", error);
+            throw error;
+          }
         }
       } else if (activeTab === "profileImages") {
         if (modalMode === "add") {
@@ -213,17 +241,21 @@ export default function Dashboard() {
           const { error } = await supabase
             .from("profile_images")
             .update({
-              image_url: formData.image_url,
-              name: formData.name,
-              is_active: formData.is_active,
+              image_url: formData.image_url || "",
+              name: formData.name || "",
+              is_active: formData.is_active !== false,
             })
-            .eq("id", editingItem.id);
-          if (error) throw error;
+            .eq("id", Number(editingItem.id));
+          if (error) {
+            console.error("Update error:", error);
+            throw error;
+          }
         }
       }
       // Close modal and reload channel data
       closeModal();
-      loadData();
+      setError(""); // Clear any previous errors
+      await loadData(); // Wait for data to reload
     } catch (err) {
       setError(err.message || "Failed to save");
     }
@@ -434,6 +466,9 @@ export default function Dashboard() {
                     <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
                       Course
                     </th>
+                    <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
+                      Semester
+                    </th>
                   </>
                 )}
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
@@ -466,6 +501,11 @@ export default function Dashboard() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {item.courses?.name || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
+                          {item.semester || "summer"}
+                        </span>
                       </td>
                     </>
                   )}
@@ -654,6 +694,21 @@ export default function Dashboard() {
                   {c.name}
                 </option>
               ))}
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Semester *
+            </label>
+            <select
+              value={formData.semester || "summer"}
+              onChange={(e) =>
+                setFormData({ ...formData, semester: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            >
+              <option value="summer">Summer Semester</option>
+              <option value="winter">Winter Semester</option>
             </select>
           </div>
           <div className="mb-4">

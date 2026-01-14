@@ -90,8 +90,7 @@ const Login = () => {
       try {
         const home = import("../pages/Home");
         const account = import("../pages/Account");
-        const review = import("../pages/Review");
-        await Promise.all([home, account, review]);
+        await Promise.all([home, account]);
       } catch (err) {
         console.warn("⚠️ Page preloading failed:", err);
       }
@@ -131,8 +130,13 @@ const Login = () => {
         .select("id")
         .eq("userid", studentId);
 
-      if (!studentModules || studentModules.length === 0) navigate("/modules");
-      else navigate("/home");
+      // Check if student has both course and modules selected
+      const hasCourse = !!existingStudent?.courseid;
+      if (!hasCourse || !studentModules || studentModules.length === 0) {
+        navigate("/modules");
+      } else {
+        navigate("/home");
+      }
     } catch (err) {
       console.warn("Login post-checks failed:", err);
     } finally {
@@ -180,8 +184,7 @@ const Login = () => {
       try {
         const home = import("../pages/Home");
         const account = import("../pages/Account");
-        const review = import("../pages/Review");
-        await Promise.all([home, account, review]);
+        await Promise.all([home, account]);
       } catch (err) {
         console.warn("⚠️ Page preloading failed:", err);
       }
@@ -221,8 +224,13 @@ const Login = () => {
         .select("id")
         .eq("userid", studentId);
 
-      if (!studentModules || studentModules.length === 0) navigate("/modules");
-      else navigate("/home");
+      // Check if student has both course and modules selected
+      const hasCourse = !!existingStudent?.courseid;
+      if (!hasCourse || !studentModules || studentModules.length === 0) {
+        navigate("/modules");
+      } else {
+        navigate("/home");
+      }
     } catch (err) {
       console.warn("Login post-checks failed:", err);
     } finally {

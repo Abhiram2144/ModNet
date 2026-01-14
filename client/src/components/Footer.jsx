@@ -13,7 +13,6 @@ export default function Footer() {
     { label: "Discover", icon: Compass, path: "/discover" },
     { label: "Home", icon: Home, path: "/home" },
     { label: "Account", icon: User, path: "/account" },
-    { label: "Review", icon: MessageSquare, path: "/review" },
   ];
 
   return (

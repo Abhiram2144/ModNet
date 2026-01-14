@@ -16,7 +16,6 @@ const Chat = lazy(() => import("../pages/ModuleChat"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const LandingPage = lazy(() => import("../pages/LandingPage"));
 const Account = lazy(() => import("../pages/Account"));
-const Review = lazy(() => import("../pages/Review"));
 const GroupChat = lazy(() => import("../pages/GroupChat"));
 const AdminLogin = lazy(() => import("../pages/AdminLogin"));
 const Dashboard = lazy(() => import("../pages/Dashboard"));
@@ -62,15 +61,6 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute>
               <Account />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/review"
-          element={
-            <ProtectedRoute>
-              <Review />
             </ProtectedRoute>
           }
         />
