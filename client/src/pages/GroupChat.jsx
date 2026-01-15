@@ -91,10 +91,11 @@ export default function GroupChat() {
         const { data: msgs, error: msgErr } = await supabase
           .from("group_messages")
           .select(
-            `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id,
+            `id, created_at, content, attachment_url, userid, reply_to,
              students:userid (displayname, profileimage)`,
           )
           .eq("channel_id", channelId)
+          .is("deleted_at", null)
           .order("created_at", { ascending: true });
         if (msgErr) throw msgErr;
         setMessages(msgs || []);
@@ -134,7 +135,7 @@ export default function GroupChat() {
                 const { data: fullMsg } = await supabase
                   .from("group_messages")
                   .select(
-                    `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
+                    `id, created_at, content, attachment_url, userid, reply_to, students:userid (displayname, profileimage)`,
                   )
                   .eq("id", newRow.id)
                   .maybeSingle();
@@ -204,9 +205,10 @@ export default function GroupChat() {
           let query = supabase
             .from("group_messages")
             .select(
-              `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
+              `id, created_at, content, attachment_url, userid, reply_to, students:userid (displayname, profileimage)`,
             )
             .eq("channel_id", channelId)
+            .is("deleted_at", null)
             .order("created_at", { ascending: true });
 
           if (since) query = query.gt("created_at", since);
@@ -261,17 +263,16 @@ export default function GroupChat() {
       const payload = {
         channel_id: channelId,
         userid: student?.id, // students.id
-        reply_to_id: replyTarget?.id || null,
+        reply_to: replyTarget?.id || null,
         content,
         attachment_url: attachmentUrl,
-        attachment_name: attachmentName,
       };
 
       const { data: insertedMsg, error: insertError } = await supabase
         .from("group_messages")
         .insert([payload])
         .select(
-          `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
+          `id, created_at, content, attachment_url, userid, reply_to, students:userid (displayname, profileimage)`,
         )
         .maybeSingle();
 

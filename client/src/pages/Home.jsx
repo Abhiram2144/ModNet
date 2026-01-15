@@ -143,7 +143,7 @@ export default function Home() {
               <strong className="font-semibold">MVP v1</strong>
               <span className="ml-2">
                 — You're using the first version of ModNet. Expect small issues
-                and frequent updates. Share feedback via Account → Review.
+                and frequent updates.
               </span>
             </div>
           </div>

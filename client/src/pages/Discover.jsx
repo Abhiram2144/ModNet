@@ -71,24 +71,28 @@ export default function Discover() {
   }, [profile?.id]);
 
   const myChats = useMemo(
-    () => channels.filter((c) => joinedIds.has(c.id)).map((c, idx) => ({
-      ...c,
-      _displayTitle: c.name || "Untitled",
-      _displayDesc: c.description || "",
-      _isPrivate: !!c.is_private,
-      _color: COLOR_CLASSES[idx % COLOR_CLASSES.length],
-    })),
+    () => channels
+      .filter((c) => joinedIds.has(c.id))
+      .map((c, idx) => ({
+        ...c,
+        _displayTitle: c.name || "Untitled",
+        _displayDesc: c.description || "",
+        _isPrivate: !!c.is_private,
+        _color: COLOR_CLASSES[idx % COLOR_CLASSES.length],
+      })),
     [channels, joinedIds],
   );
 
   const otherChats = useMemo(
     // Only include public channels that the user hasn't joined. Private channels are not shown here.
-    () => channels.filter((c) => !joinedIds.has(c.id) && !c.is_private).map((c, idx) => ({
-      ...c,
-      _displayTitle: c.name || "Untitled",
-      _displayDesc: c.description || "",
-      _color: COLOR_CLASSES[idx % COLOR_CLASSES.length],
-    })),
+    () => channels
+      .filter((c) => !joinedIds.has(c.id) && !c.is_private)
+      .map((c, idx) => ({
+        ...c,
+        _displayTitle: c.name || "Untitled",
+        _displayDesc: c.description || "",
+        _color: COLOR_CLASSES[idx % COLOR_CLASSES.length],
+      })),
     [channels, joinedIds],
   );
 

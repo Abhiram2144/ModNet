@@ -9,7 +9,10 @@ import { useAuth } from "../contexts/AuthContext";
 
 // 🧩 Lazy load all pages for performance
 const Login = lazy(() => import("../pages/Login"));
+const CourseSelect = lazy(() => import("../pages/CourseSelect"));
+const SemesterSelect = lazy(() => import("../pages/SemesterSelect"));
 const ModuleSelect = lazy(() => import("../pages/ModuleSelect"));
+const ConsentPage = lazy(() => import("../pages/ConsentPage"));
 const Home = lazy(() => import("../pages/Home"));
 const Discover = lazy(() => import("../pages/Discover"));
 const Chat = lazy(() => import("../pages/ModuleChat"));
@@ -48,10 +51,37 @@ export default function AppRoutes() {
 
         {/* Protected Routes */}
         <Route
+          path="/course-select"
+          element={
+            <ProtectedRoute>
+              <CourseSelect />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/semester-select"
+          element={
+            <ProtectedRoute>
+              <SemesterSelect />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/modules"
           element={
             <ProtectedRoute>
               <ModuleSelect />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/consent"
+          element={
+            <ProtectedRoute>
+              <ConsentPage />
             </ProtectedRoute>
           }
         />

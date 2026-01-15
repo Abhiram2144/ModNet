@@ -130,10 +130,18 @@ const Login = () => {
         .select("id")
         .eq("userid", studentId);
 
-      // Check if student has both course and modules selected
+      // Check if student has course, semester, and modules selected
       const hasCourse = !!existingStudent?.courseid;
-      if (!hasCourse || !studentModules || studentModules.length === 0) {
+      const hasSemester = !!existingStudent?.semester;
+      const hasConsent = !!existingStudent?.consent_accepted;
+      if (!hasCourse) {
+        navigate("/course-select");
+      } else if (!hasSemester) {
+        navigate("/semester-select");
+      } else if (!studentModules || studentModules.length === 0) {
         navigate("/modules");
+      } else if (!hasConsent) {
+        navigate("/consent");
       } else {
         navigate("/home");
       }
@@ -224,10 +232,18 @@ const Login = () => {
         .select("id")
         .eq("userid", studentId);
 
-      // Check if student has both course and modules selected
+      // Check if student has course, semester, and modules selected
       const hasCourse = !!existingStudent?.courseid;
-      if (!hasCourse || !studentModules || studentModules.length === 0) {
+      const hasSemester = !!existingStudent?.semester;
+      const hasConsent = !!existingStudent?.consent_accepted;
+      if (!hasCourse) {
+        navigate("/course-select");
+      } else if (!hasSemester) {
+        navigate("/semester-select");
+      } else if (!studentModules || studentModules.length === 0) {
         navigate("/modules");
+      } else if (!hasConsent) {
+        navigate("/consent");
       } else {
         navigate("/home");
       }
@@ -306,6 +322,8 @@ const Login = () => {
               onSubmit={handleVerifyCode}
               onClear={() => setMessage("")}
               loading={loading}
+              title="Student Verification Code 🎓"
+              description="Enter the 6-digit code from your Outlook email"
             />
 
             {message && (

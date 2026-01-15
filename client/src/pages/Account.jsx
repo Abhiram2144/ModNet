@@ -106,11 +106,11 @@ const AccountPage = () => {
       // Update profile context
       setProfile({ ...profile, semester: selectedSemester });
       alert(
-        `Semester changed to ${selectedSemester}. You'll need to select modules for the new semester.`
+        `Semester changed to ${selectedSemester}. Please review your course and module selections.`
       );
       setShowSemesterModal(false);
-      // Redirect to module selection
-      navigate("/module-select");
+      // Redirect to course selection to start flow
+      navigate("/course-select");
     } catch (error) {
       alert("Failed to change semester: " + error.message);
     }
@@ -254,20 +254,28 @@ const AccountPage = () => {
 
           {/* Modules Info */}
           <div className="rounded-2xl border border-gray-200 bg-white px-6 py-5">
-            <h3 className="mb-2 text-center text-sm tracking-wide text-gray-500 uppercase">
+            <h3 className="mb-4 text-center text-sm tracking-wide text-gray-500 uppercase">
               Modules
             </h3>
             {modules.length > 0 ? (
-              <ul className="space-y-1 text-center text-sm text-gray-700">
+              <div className="space-y-2">
                 {modules.map((mod, idx) => (
-                  <li key={idx}>{mod}</li>
+                  <div key={idx} className="flex items-center rounded-lg bg-blue-50 border border-blue-200 px-4 py-3">
+                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-600 text-white text-xs font-semibold mr-3">
+                      {idx + 1}
+                    </span>
+                    <span className="text-sm text-gray-900 font-medium">{mod}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             ) : (
               <p className="text-center text-sm text-gray-400">
                 No modules selected yet.
               </p>
             )}
+            <p className="mt-4 text-xs text-gray-500">
+              To change your modules, contact your course administrator or reselect during course setup.
+            </p>
           </div>
         </div>
 

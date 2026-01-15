@@ -44,46 +44,20 @@ export default function AdminLogin() {
     }
 
     try {
-      // Authenticate with Supabase using magic link OTP flow
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { shouldCreateUser: false },
-      });
-
-      if (signInError) {
-        throw new Error(signInError.message);
-      }
-
-      // Verify the OTP using a dummy token (in real scenario, admin would get email)
-      // For now, we'll create an admin session after code verification
-      const { data: { user }, error: getUserError } = await supabase.auth.getUser();
-
-      if (getUserError || !user) {
-        // Create a custom JWT token for admin (using a workaround)
-        // In production, use proper Supabase Admin API
-        sessionStorage.setItem("admin_session", JSON.stringify({
-          email: email.trim(),
-          timestamp: Date.now(),
-          isAdmin: true
-        }));
-        setLoading(false);
-        navigate("/dashboard");
-        return;
-      }
-
-      // Store admin session
+      // Simply verify the code and create admin session
+      // No Supabase auth needed for admin dashboard
       sessionStorage.setItem("admin_session", JSON.stringify({
         email: email.trim(),
-        authId: user.id,
         timestamp: Date.now(),
-        isAdmin: true
+        isAdmin: true,
+        verified: true
       }));
 
       setLoading(false);
       navigate("/dashboard");
     } catch (err) {
       console.error("Admin login error:", err);
-      setError("Authentication failed. Please try again.");
+      setError("Login failed. Please try again.");
       setLoading(false);
     }
   };

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { Plus, Pencil, Trash2, X, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, X, LogOut, ChevronLeft, ChevronRight, Users } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -75,29 +75,13 @@ export default function Dashboard() {
     setError("");
     try {
       if (activeTab === "channels") {
-        // Load all channels (DB now has is_private column) and compute member counts
+        // Load all channels (DB now has is_private column) and member_count
         const { data, error } = await supabase
           .from("channels")
           .select("*")
           .order("id", { ascending: true });
         if (error) throw error;
-        const ch = data || [];
-        if (ch.length) {
-          const ids = ch.map((c) => c.id);
-          const { data: members, error: memErr } = await supabase
-            .from("channel_members")
-            .select("channel_id, student_id")
-            .in("channel_id", ids);
-          if (memErr) throw memErr;
-          const counts = (members || []).reduce((acc, r) => {
-            acc[r.channel_id] = (acc[r.channel_id] || 0) + 1;
-            return acc;
-          }, {});
-          const mapped = ch.map((c) => ({ ...c, member_count: counts[c.id] || 0 }));
-          setChannels(mapped);
-        } else {
-          setChannels([]);
-        }
+        setChannels(data || []);
       } else if (activeTab === "courses") {
         const { data, error } = await supabase
           .from("courses")
@@ -171,7 +155,7 @@ export default function Dashboard() {
           const { error } = await supabase
             .from("channels")
             .update(payload)
-            .eq("id", Number(editingItem.id));
+            .eq("id", editingItem.id);
           if (error) {
             console.error("Update error:", error);
             throw error;
@@ -193,7 +177,7 @@ export default function Dashboard() {
               name: formData.name || "",
               description: formData.description || "",
             })
-            .eq("id", Number(editingItem.id));
+            .eq("id", editingItem.id);
           if (error) {
             console.error("Update error:", error);
             throw error;
@@ -206,7 +190,7 @@ export default function Dashboard() {
               name: formData.name || "",
               code: formData.code || "",
               description: formData.description || "",
-              course_id: formData.course_id ? Number(formData.course_id) : null,
+              course_id: formData.course_id || null,
               semester: formData.semester || "summer",
             },
           ]);
@@ -218,10 +202,10 @@ export default function Dashboard() {
               name: formData.name || "",
               code: formData.code || "",
               description: formData.description || "",
-              course_id: formData.course_id ? Number(formData.course_id) : null,
+              course_id: formData.course_id || null,
               semester: formData.semester || "summer",
             })
-            .eq("id", Number(editingItem.id));
+            .eq("id", editingItem.id);
           if (error) {
             console.error("Update error:", error);
             throw error;
@@ -245,7 +229,7 @@ export default function Dashboard() {
               name: formData.name || "",
               is_active: formData.is_active !== false,
             })
-            .eq("id", Number(editingItem.id));
+            .eq("id", editingItem.id);
           if (error) {
             console.error("Update error:", error);
             throw error;
@@ -453,7 +437,7 @@ export default function Dashboard() {
             <thead>
               <tr className="bg-gray-100 border-b border-gray-200">
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
-                  ID
+                  #
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">
                   Name
@@ -483,9 +467,9 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {paginatedData.map((item) => (
+              {paginatedData.map((item, index) => (
                 <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900">{item.id}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 font-medium">{startIndex + index + 1}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 font-medium">
                     <div className="flex items-center space-x-2">
                       <span>{item.name}</span>
@@ -513,7 +497,7 @@ export default function Dashboard() {
                     {item.description || "—"}
                   </td>
                   <td className="px-4 py-3 text-center text-sm text-gray-600">
-                    {typeof item.member_count !== 'undefined' ? item.member_count : "—"}
+                    {item.member_count ?? 0}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {(item.is_private) && (
@@ -524,10 +508,10 @@ export default function Dashboard() {
                           setMembersResult(null);
                           setShowMembersModal(true);
                         }}
-                        className="inline-flex items-center text-gray-700 hover:text-gray-900 hover:cursor-pointer mr-3"
+                        className="inline-flex items-center text-purple-600 hover:text-purple-800 hover:cursor-pointer mr-3"
                         title="Manage Members"
                       >
-                        Members
+                        <Users size={16} />
                       </button>
                     )}
                     <button
@@ -605,19 +589,19 @@ export default function Dashboard() {
   };
 
   const renderModalForm = () => {
-    if (activeTab === "channels" || activeTab === "courses") {
+    if (activeTab === "channels") {
       return (
         <>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Name *
+              Channel Name *
             </label>
             <input
               type="text"
               value={formData.name || ""}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              placeholder="Enter name"
+              placeholder="Enter channel name"
             />
           </div>
           <div className="mb-4">
@@ -634,20 +618,48 @@ export default function Dashboard() {
               placeholder="Enter description"
             />
           </div>
-          {(activeTab === "channels") && (
-            <div className="mb-4">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.is_private !== false}
-                  onChange={(e) => setFormData({ ...formData, is_private: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                />
-                <span className="text-sm font-medium text-gray-700">Mark as private channel</span>
-              </label>
-              <div className="text-xs text-gray-500 mt-1">Private channels are stored in the database via the <code>is_private</code> column.</div>
-            </div>
-          )}
+          <div className="mb-4">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.is_private !== false}
+                onChange={(e) => setFormData({ ...formData, is_private: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+              />
+              <span className="text-sm font-medium text-gray-700">Mark as private channel</span>
+            </label>
+          </div>
+        </>
+      );
+    } else if (activeTab === "courses") {
+      return (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Course Title *
+            </label>
+            <input
+              type="text"
+              value={formData.name || ""}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="e.g., Computer Science"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea
+              value={formData.description || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              rows={3}
+              placeholder="Enter description"
+            />
+          </div>
         </>
       );
     } else if (activeTab === "modules") {

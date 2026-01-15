@@ -19,11 +19,9 @@ export default function ModuleChat() {
   const [fileError, setFileError] = useState("");
   const [replyTarget, setReplyTarget] = useState(null);
   const [sending, setSending] = useState(false);
-  // If userModules are preloaded we can determine access synchronously
-  const initialAllowed = userModules
-    ? Boolean(userModules.some((m) => String(m.id) === String(moduleId)))
-    : null;
-  const [allowed, setAllowed] = useState(initialAllowed);
+  // Always start with null to check access properly in useEffect
+  // Don't pre-determine access to avoid false negatives
+  const [allowed, setAllowed] = useState(null);
   const messagesEndRef = useRef(null);
   const isFirstLoadRef = useRef(true); // to jump to bottom immediately on initial load
   const lastSeenRef = useRef(null); // latest created_at we've seen (for polling fallback)
@@ -125,11 +123,12 @@ export default function ModuleChat() {
           .from("messages")
           .select(
             `
-            id, created_at, content, attachment_url, attachment_name, userid, reply_to_id,
+            id, created_at, content, attachment_url, userid, reply_to,
             students:userid (displayname, profileimage)
           `,
           )
           .eq("moduleid", moduleId)
+          .is("deleted_at", null)
           .order("created_at", { ascending: true });
 
         if (msgError) throw msgError;
@@ -262,9 +261,10 @@ export default function ModuleChat() {
           let query = supabase
             .from("messages")
             .select(
-              `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
+              `id, created_at, content, attachment_url, userid, reply_to, students:userid (displayname, profileimage)`,
             )
             .eq("moduleid", moduleId)
+            .is("deleted_at", null)
             .order("created_at", { ascending: true });
 
           if (since) {
@@ -337,17 +337,16 @@ export default function ModuleChat() {
         // messages.userid must reference students.id (the students PK).
         // Prefer the student's `id` (uuid) — not the Supabase auth id.
         userid: student?.id,
-        reply_to_id: replyTarget?.id || null,
+        reply_to: replyTarget?.id || null,
         content,
         attachment_url: attachmentUrl,
-        attachment_name: attachmentName,
       };
 
       const { data: insertedMsg, error: insertError } = await supabase
         .from("messages")
         .insert([payload])
         .select(
-          `id, created_at, content, attachment_url, attachment_name, userid, reply_to_id, students:userid (displayname, profileimage)`,
+          `id, created_at, content, attachment_url, userid, reply_to, students:userid (displayname, profileimage)`,
         )
         .maybeSingle();
 

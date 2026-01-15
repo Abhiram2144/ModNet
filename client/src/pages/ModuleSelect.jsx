@@ -3,48 +3,29 @@ import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { X } from "lucide-react";
+import CustomSelect from "../components/CustomSelect";
 
 const ModulesSelect = () => {
-  const [semester, setSemester] = useState("summer");
-  const [courses, setCourses] = useState([]);
   const [modules, setModules] = useState([]);
-  const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedModules, setSelectedModules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { setUserModules, setProfile } = useAuth();
+  const { setUserModules, setProfile, profile } = useAuth();
+  const semester = profile?.semester || "summer";
+  const selectedCourse = profile?.courseid;
 
-  // Fetch courses for selected semester
+  // Check if course and semester are selected, redirect if not
   useEffect(() => {
-    const fetchCourses = async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("semester", semester)
-        .order("name");
-      
-      if (error) {
-        console.error("Error fetching courses:", error);
-        setError("Failed to load courses");
-      } else {
-        setCourses(data);
-      }
-      setSelectedCourse("");
-      setModules([]);
-      setSelectedModules([]);
-    };
-    fetchCourses();
-  }, [semester]);
+    if (!selectedCourse || !semester) {
+      navigate("/course-select");
+    }
+  }, [selectedCourse, semester, navigate]);
 
-  // Fetch modules for selected course
+  // Fetch modules for selected course and semester
   useEffect(() => {
     const fetchModules = async () => {
-      if (!selectedCourse) {
-        setModules([]);
-        setSelectedModules([]);
-        return;
-      }
+      if (!selectedCourse || !semester) return;
 
       const { data, error } = await supabase
         .from("modules")
@@ -63,16 +44,13 @@ const ModulesSelect = () => {
     fetchModules();
   }, [selectedCourse, semester]);
 
-  const handleModuleSelect = (event) => {
-    const moduleid = event.target.value;
+  const handleModuleSelect = (moduleid) => {
     if (!moduleid) return;
 
-    // convert to number for type consistency
-    const modIdNum = Number(moduleid);
+    // moduleid is already a string/UUID from CustomSelect
+    if (selectedModules.includes(moduleid)) return;
 
-    if (selectedModules.includes(modIdNum)) return;
-
-    setSelectedModules([...selectedModules, modIdNum]);
+    setSelectedModules([...selectedModules, moduleid]);
   };
 
   const handleRemoveModule = (moduleid) => {
@@ -80,8 +58,8 @@ const ModulesSelect = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedCourse || selectedModules.length === 0) {
-      setError("Please select a course and at least one module.");
+    if (!selectedCourse || selectedModules.length !== 4) {
+      setError("Please select exactly 4 modules to continue.");
       return;
     }
 
@@ -191,8 +169,18 @@ const ModulesSelect = () => {
         console.warn("Failed to update auth context after module save:", err);
       }
 
-      alert("✅ Modules saved successfully!");
-      navigate("/home");
+      // Check if user has already accepted consent
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("consent_accepted")
+        .eq("id", userRecord.id)
+        .single();
+
+      if (studentData?.consent_accepted) {
+        navigate("/home");
+      } else {
+        navigate("/consent");
+      }
     } catch (err) {
       console.error("❌ Error saving module selections:", err);
       setError(`Something went wrong while saving your preferences: ${err.message}`);
@@ -201,12 +189,21 @@ const ModulesSelect = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate("/semester-select");
+  };
+
   return (
-    <div className="font-inter flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-center font-serif text-2xl font-semibold">
-          Select Your Semester, Course & Modules
-        </h1>
+    <div className="font-inter flex min-h-screen items-center justify-center bg-[#F2EFE8] px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
+        <div className="mb-6 text-center">
+          <h1 className="font-serif text-3xl font-semibold text-gray-900">
+            Select Your Modules
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Step 3 of 3: Choose modules for {semester === "summer" ? "Summer" : "Winter"} semester
+          </p>
+        </div>
 
         {error && (
           <div className="mb-4 rounded-md bg-red-100 p-3 text-sm text-red-700">
@@ -214,95 +211,69 @@ const ModulesSelect = () => {
           </div>
         )}
 
-        {/* Semester Selection */}
-        <div className="mb-5">
-          <label className="mb-1 block text-sm font-medium">Semester</label>
-          <select
-            className="w-full rounded-md border border-gray-600 p-2 text-sm focus:ring-1 focus:ring-gray-400 focus:outline-none"
-            value={semester}
-            onChange={(e) => setSemester(e.target.value)}
-          >
-            <option value="summer">Summer Semester</option>
-            <option value="winter">Winter Semester</option>
-          </select>
-        </div>
-
-        {/* Course Dropdown */}
-        <div className="mb-5">
-          <label className="mb-1 block text-sm font-medium">Course</label>
-          <select
-            className="w-full rounded-md border border-gray-600 p-2 text-sm focus:ring-1 focus:ring-gray-400 focus:outline-none"
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            disabled={courses.length === 0}
-          >
-            <option value="">Select a course</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Modules Dropdown */}
-        {modules.length > 0 && (
-          <div className="mb-5">
-            <label className="mb-1 block text-sm font-medium">
-              Modules (Select at least one)
-            </label>
-            <select
-              className="w-full rounded-md border border-gray-600 p-2 text-sm focus:ring-1 focus:ring-gray-400 focus:outline-none"
-              onChange={handleModuleSelect}
+        <div className="mb-5">
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Modules (Select at least one)
+          </label>
+          {modules.length === 0 ? (
+            <p className="text-sm text-gray-500">Loading modules...</p>
+          ) : (
+            <CustomSelect
               value=""
-            >
-              <option value="">Select a module</option>
-              {modules.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.code} - {m.name}
-                </option>
-              ))}
-            </select>
+              onChange={handleModuleSelect}
+              options={modules.map(m => ({ value: m.id, label: `${m.code} - ${m.name}` }))}
+              placeholder="Select a module"
+            />
+          )}
 
-            {/* Selected Modules */}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {selectedModules.map((modId) => {
-                const mod = modules.find((m) => m.id === modId);
-                return (
-                  <div
-                    key={modId}
-                    className="flex items-center rounded-md bg-[#DEE7E7] px-3 py-1 text-sm font-medium"
+          {/* Selected Modules */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {selectedModules.map((modId) => {
+              const mod = modules.find((m) => m.id === modId);
+              return (
+                <div
+                  key={modId}
+                  className="flex items-center rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-blue-900"
+                >
+                  <span>{mod?.code} - {mod?.name || "Unknown module"}</span>
+                  <button
+                    type="button"
+                    className="ml-2 text-blue-600 hover:text-red-600"
+                    onClick={() => handleRemoveModule(modId)}
                   >
-                    <span>{mod?.code} - {mod?.name || "Unknown module"}</span>
-                    <button
-                      type="button"
-                      className="ml-2 hover:text-red-400"
-                      onClick={() => handleRemoveModule(modId)}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                    <X size={16} />
+                  </button>
+                </div>
+              );
+            })}
           </div>
-        )}
+        </div>
 
-        <p className="mb-4 text-center text-xs font-bold text-red-400">
-          You can change semester and modules later in Account *
+        <p className="mb-4 text-center text-xs text-gray-600">
+          You must select exactly 4 modules. You can change your semester later in Account settings.
         </p>
 
-        <button
-          onClick={handleSubmit}
-          disabled={loading || !selectedCourse || selectedModules.length === 0}
-          className={`w-full rounded-md py-2 text-sm font-medium text-white transition-all ${
-            loading || !selectedCourse || selectedModules.length === 0
-              ? "cursor-not-allowed bg-gray-600"
-              : "bg-primary cursor-pointer text-black hover:bg-red-700"
-          }`}
-        >
-          {loading ? "Saving..." : "Submit"}
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="w-full rounded-lg border border-gray-300 py-3 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-50"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading || selectedModules.length !== 4}
+            className={`w-full rounded-lg py-3 text-sm font-semibold transition-all ${
+              loading || selectedModules.length !== 4
+                ? "cursor-not-allowed bg-gray-300 text-gray-500"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
+          >
+            {loading ? "Saving..." : `Next: Review Terms (${selectedModules.length}/4)`}
+          </button>
+        </div>
       </div>
     </div>
   );

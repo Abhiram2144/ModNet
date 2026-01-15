@@ -86,6 +86,15 @@ export default function ConsentModal({ onAccept }) {
             </ul>
           </div>
 
+          <div className="rounded-lg bg-amber-50 p-4">
+            <h3 className="mb-2 font-semibold text-amber-900">
+              Data retention after deletion:
+            </h3>
+            <p className="text-amber-800">
+              When you delete a message or request data deletion, the information is removed from your view immediately. However, to comply with GDPR regulations and maintain system integrity, deleted data will be retained in our database for <strong>30 days</strong> to ensure proper data processing and audit compliance. After 30 days, all deleted personal data will be permanently and irreversibly removed from our systems.
+            </p>
+          </div>
+
           <div className="rounded-lg bg-blue-50 p-4">
             <h3 className="mb-2 font-semibold text-blue-900">
               Data security:
