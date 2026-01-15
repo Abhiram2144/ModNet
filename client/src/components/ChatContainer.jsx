@@ -53,9 +53,11 @@ export default function ChatContainer({
     const updateFromState = () => {
       try {
         const state = presenceChannel.presenceState?.() || {};
-        setChatOnlineCount(Object.keys(state).length);
+        const count = Object.keys(state).length;
+        console.log('Presence state updated:', { state, count });
+        setChatOnlineCount(count);
       } catch (e) {
-        // ignore
+        console.error('Error updating presence:', e);
       }
     };
 
@@ -66,10 +68,21 @@ export default function ChatContainer({
     presenceChannel.on("presence", { event: "join" }, () => updateFromState());
     presenceChannel.on("presence", { event: "leave" }, () => updateFromState());
 
-    presenceChannel.subscribe();
+    presenceChannel.subscribe(async (status) => {
+      console.log('Presence channel status:', status);
+      if (status === "SUBSCRIBED") {
+        // Broadcast that this user is online
+        const trackResult = await presenceChannel.track({
+          user_id: student.id,
+          display_name: student.displayname,
+        });
+        console.log('Track result:', trackResult);
+      }
+    });
 
     return () => {
       try {
+        presenceChannel.untrack();
         supabase.removeChannel(presenceChannel);
       } catch (e) {}
     };
