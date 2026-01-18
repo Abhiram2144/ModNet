@@ -121,7 +121,23 @@ serve(async (req) => {
       console.error("Storage cleanup error:", storageError);
     }
 
-    // 5. Delete related records
+    // 5. Delete auth user FIRST (before database records)
+    const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(
+      user.id
+    );
+
+    if (deleteAuthError) {
+      console.error("Failed to delete auth user:", deleteAuthError);
+      return new Response(
+        JSON.stringify({ error: "Failed to delete authentication" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 6. Delete related records
     await supabaseAdmin.from("user_modules").delete().eq("userid", student.id);
     await supabaseAdmin
       .from("channel_members")
@@ -129,7 +145,7 @@ serve(async (req) => {
       .eq("student_id", student.id);
     await supabaseAdmin.from("reports").delete().eq("reported_by", student.id);
 
-    // 6. Delete student profile
+    // 7. Delete student profile
     const { error: deleteProfileError } = await supabaseAdmin
       .from("students")
       .delete()
@@ -139,22 +155,6 @@ serve(async (req) => {
       console.error("Failed to delete profile:", deleteProfileError);
       return new Response(
         JSON.stringify({ error: "Failed to delete profile" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // 7. Delete auth user (final step)
-    const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(
-      user.id
-    );
-
-    if (deleteAuthError) {
-      console.error("Failed to delete auth user:", deleteAuthError);
-      return new Response(
-        JSON.stringify({ error: "Failed to delete authentication" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
